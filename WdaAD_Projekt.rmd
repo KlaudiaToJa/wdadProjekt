@@ -405,7 +405,7 @@ tutaj jest takie ogólne obejrzenie danych:
 
 
 
-# Analiza wyników ankiety i podstawowych statystyk
+# Analiza podstawowych statystyk dla mięs
 
 ## W którym miesiącu wydatki na mięso są największe:
 
@@ -414,7 +414,7 @@ najwiekszeWydatki <- wydatkiMiesoNieodstajace %>%
   count(Mese, wt = miesoRazem, sort = TRUE)
 najwiekszeWydatki
 ```
-Największe wydatki na mięso u rodzin Włoskich występują w kwietniu, później w lutym i styczniu
+Największe wydatki na mięso u rodzin Włoskich występują w kwietniu, później w lutym i styczniu.
 
 
 ## Który typ rodziny wydaje najwięcej na mięso:
@@ -516,8 +516,8 @@ Dla p-value > 0.05 nie ma podstaw do odrzucenia hipotezy zerowej testu Kruskala-
 *Wydatki na cielęcinę i wołowinę są bardziej zróżnicowanie wielkościowo pomiędzy rodzinami niż wydatki na wędliny*
 
 ```{r}
-rozsmarowane <- wydatkiMiesoNieodstajace %>% select(C_1201, C_1208)
-doLevene <- gather(rozsmarowane, key = "rodzajMiesa", value = "wydatek")
+zebrane1 <- wydatkiMiesoNieodstajace %>% select(C_1201, C_1208)
+doLevene <- gather(zebrane1, key = "rodzajMiesa", value = "wydatek")
 doLevene
 ```
 
@@ -553,3 +553,45 @@ Na podstawie wyników testu post-hoc (przy p-value <= 0.025 odrzucona H0 mówią
 
 - nr 1: Persona sola con meno di 35 anni = Osoba samotna w wieku poniżej 35 lat
 - nr 3: Persona sola con 65 anni e più = Osoba samotna, która ukończyła 65 lat
+
+
+# Regresja logistyczna
+
+Czy to, że rodzina przekracza średnią wielkość wydatków na mięso, jest zależne od typu rodziny, miesiąca i ilości osób w domostwie (MOŻNA DODAĆ JESZCZE INNE OPCJE)?
+
+```{r}
+srednia <- mean(wydatkiMiesoNieodstajace$miesoRazem)
+doLogistycznej <- wydatkiMiesoNieodstajace
+doLogistycznej$miesoRazem <- ifelse(doLogistycznej$miesoRazem>=srednia, 1, 0) # jeśli wydali więcej niż wynosi średnia, zastępuję 1
+```
+
+
+```{r}
+glm(formula = miesoRazem ~ TIPFAM + Mese + NC, data = wydatkiMiesoNieodstajace, family = binomial)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
