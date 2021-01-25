@@ -1,0 +1,554 @@
+---
+title: "WdAD_Projekt"
+author: "Anna Pietryka"
+date: "21 12 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr) # do pracy z danymi
+library(outliers) # do wykrywania wartości odstających
+library(Hmisc) # do imputowania danych
+library(mice) # do sprawdzania braków danych
+library(car) # do przeprowadzania testów
+library(tidyr) # do pracy z danymi
+library(dunn.test) # do przeprowadzenia testu Dunna
+library(RColorBrewer) # palety kolorow
+library(jcolors)      # palety kolorow
+library(CGPfunctions) # slopegraph
+library(tidyverse)   
+library(ggplot2)  
+library(readr)
+```
+
+```{r}
+dane <- read.delim("~/Desktop/Studia/Semestr 3/Analiza danych/ćwiczenia/HBS_Microdati_Anno_2011.txt")
+```
+
+
+# Wstęp
+
+Do wykonania analizy został wykorzystany zbiór danych dotyczący wydatków gospodarstw domowych we Włoszech w roku 2011.
+
+> **Wstępne zapoznanie z danymi dotyczacymi rodzin wloskich** </br>
+> **Typy rodzin według klasyfikacji.**
+
+W badaniu rodziny zostały podzielone na 11 typów w zależności od tego czy w badanym gospodarstwie domowym znajduje się osoba samotna, para bez dzieci, para z dziećmi, samotny rodzic lub inne.
+<br/>Typy rodzin:
+<br/>1 = Osoba samotna w wieku poniżej 35 lat
+<br/>2 = Osoba samotna w wieku 35-64 lat
+<br/>3 = Osoba samotna w wieku 65 lat i starsza
+<br/>4 = Para bez dzieci z osobą kontaktową poniżej 35 roku życia
+<br/>5 = Para bez dzieci z osobą kontaktową w wieku 35-64 lat
+<br/>6 = Para bez dzieci z osobą kontaktową w wieku 65 lat i starszą
+<br/>7 = Para z 1 dzieckiem
+<br/>8 = Para z 2 dziećmi
+<br/>9 = Para z 3 i więcej dziećmi
+<br/>10 = Samotny rodzic
+<br/>11 = Inne typy
+
+```{r echo=FALSE}
+typ_rodziny <- dane$TIPFAM
+h <- hist(typ_rodziny, 
+     breaks = c(0:11),
+     ylim=c(0,5000),
+     main = paste("Histogram częstości występowania typu rodziny włoskiej w badaniu"), 
+     xlab = "Typ rodziny", ylab = "Częstość")
+text(h$mids,h$counts,labels=h$counts, adj=c(0.5, -0.5))
+
+```
+
+<br/> Z powyższego histogramu wynika, że w badaniu nie wzięły udziału rodziny oznaczone według typu:
+  <br/>- 2 - Osoba samotna w wieku 35-64 lat
+  <br/>- 5 - Para bez dzieci z osobą kontaktową w wieku 35-64 lat
+  <br/>- 9 - Para z 3 i więcej dziećmi
+  <br/>- 11 - inne typy
+  <br/>
+  
+  
+> **Ilość członków gospodarstwa domowego w analizowanych rodzinach.**
+
+```{r echo=FALSE}
+il_czlonkow <- dane$NC
+h_il<- hist(il_czlonkow, 
+     breaks = c(0:12),
+     ylim=c(0,10000),
+     main = paste("Histogram częstości czonków gospodarstwa domowego"), 
+     xlab = "Ilość członków", ylab = "Częstość")
+text(h_il$mids,h_il$counts,labels=h_il$counts, adj=c(0.5, -0.5))
+
+```
+
+Z powyższego histogramu wynika, że w badaniu nie wzięły udziały gospodarstwa domowe, które liczą więcej niż 6 członków.
+
+> **Ilość zbadanych gospodarstw domowych z poszczególnych regionów.**
+
+```{r echo=FALSE}
+il_gospodarstw <- dane$Regione
+h_gospodarstwa<- hist(il_gospodarstw, 
+     breaks = c(0:20),
+     ylim=c(0,3000),
+     main = paste("Ilość gospodarstw domowychw poszczególnych regionach."), 
+     xlab = "Ilość gospodarstw", ylab = "Częstość")
+text(h_gospodarstwa$mids,h_gospodarstwa$counts,labels=h_gospodarstwa$counts, adj=c(0.5, -0.5))
+
+```
+
+W oznaczeniach regionów Włoskich nie występuje liczba 2 dlatego, że Piemont i Valle d'Aosta zostały połączone. Najwięcej gospodarstw domowych poddano badaniu w Lombardii.
+Porównując ilość badanych gospodarstw z wielkością danych regionów można stwierdzić, że w tych zajmujących większą powierzchnię poddano badaniu większą liczbę mieszkańców.
+
+> **Ilość poddanych badaniu gospodarstw domowych w zależności od miesiąca w którym odbywało się badanie.**
+
+```{r echo=FALSE}
+il_miesiac <- dane$Mese
+h_miesiac<- hist(il_miesiac, 
+     breaks = c(0:12),
+     ylim=c(0,3000),
+     main = paste("Ilość gospodarstw domowych zbadanych w zależności od miesiąca."), 
+     xlab = "Ilość gospodarstw", ylab = "Częstość")
+text(h_miesiac$mids,h_miesiac$counts,labels=h_miesiac$counts, adj=c(0.5, -0.5))
+
+```
+
+W każdym miesiącu poddano badaniu podobną ilość gospodarstw domowych.
+
+> **Wydatki na osobę w gospodarstwach domowych.**
+
+Do obliczenia wydatków przypadających na jedną osobę będą brane tylko wydatki uwzględnione w liść zakupów danego gospodarstwa domowego. Kolumny oznaczone symbolami *„C_[…]"* nie wszystkie zaliczają się do tej grupy. Niektóre z nich świadczą o posiadaniu prze rodzinę określonego dobra.
+
+```{r echo=FALSE}
+wydatki <- dane[,(453:562)]
+il_osob_w_gospodarstwie <- dane$NC
+dane_wydatki <- as.data.frame(cbind(il_osob_w_gospodarstwie, rowSums(wydatki)))
+colnames(dane_wydatki) <- c("Il_osób", "Suma_wydatków")
+
+dane_wydatki <- dane_wydatki %>%
+  mutate(Wydatki_na_os = Suma_wydatków/Il_osób)
+
+h_wydatki<- hist(dane_wydatki$Wydatki_na_os,
+     ylim=c(0,6000),
+     xlim=c(0,4000),
+     breaks = 40,
+     main = paste("Wydatki na osobę"), 
+     xlab = "Wysokość wydatków", ylab = "Częstość")
+```
+
+Wykres *„Wydatki na osobę”* ma rozkład χ2. Najwięcej gospodarstw domowych wydaje na osobę pomiędzy 300, a 400 euro. Wraz ze wzorotem wydatków na osobę ilość gospodarstw  domowych zaliczających się do danej grupy jest coraz mniejsza. 
+
+> **Średnia ilość wydatków na osobę w poszczególnych typach rodzin.**
+
+```{r include=FALSE}
+dane_wydatki <- (cbind(dane$TIPFAM,dane_wydatki))
+colnames(dane_wydatki) <- c("Typ_rodziny", "Il_osób", "Suma_wydatków", "Wydatki_na_os")
+
+sr_wydatki_dla_typRodziny <- dane_wydatki %>%
+  group_by(Typ_rodziny)%>%
+  mutate(srednia = mean(Wydatki_na_os))
+```
+
+```{r echo=FALSE}
+sr_wydatki_dla_typRodziny
+```
+
+kkk
+
+<br/>
+Największe średnie wydatki na osobę występują w gospodarstwie domowym, w którym znajduję się jedna osoba samotna w wieku poniżej 35 lat. Jest to stosunkowo zrozumiałe, ponieważ taka osoba sama pokrywa opłaty związane z mieszkaniem, rachunkami i utrzymaniem. Znacznie mniej wydają osoby starsze, powyżej 65 roku życia, mieszkające samotnie. Ta różnica może wynikać z tego, że osoby do 35 roku życia, zazwyczaj rozwijają swoją karierę zawodową, zarabiają więcej, a także prowadzą bardziej towarzyski tryb życia. Natomiast osoby starsze nauczone są oszczędzenia i przez to ich średnie wydatki są znacznie niższe. 
+
+<br/>
+Średnio najmniej wydają gospodarstwa domowe składające się z pary z dwójką dzieci. Może to być spowodowane tym, że rodzice oszczędzają pieniądze na wykształcenie dzieci, ponieważ trzeba zapłacić za edukację dwóch pociech przez co mniej wydaję się na codzienną konsumpcję,  lub dzieci nie są tak bardzo rozpieszczane, jak w przypadku rodzin z jednym dzieckiem.
+
+> **Średnia ilość wydatków w poszczególnych regionach Włoch.**
+
+```{r include=FALSE}
+
+dane_wydatki <- (cbind(dane$Regione,dane_wydatki))
+colnames(dane_wydatki) <- c("Region","Typ_rodziny", "Il_osób", "Suma_wydatków", "Wydatki_na_os")
+
+sr_wydatki_dla_Regionu <- dane_wydatki %>%
+  group_by(Region)%>%
+  mutate(srednia = mean(Wydatki_na_os))
+```
+
+```{r echo=FALSE}
+par(mar = c(2, 7, 7, 2) + 1)
+wykres_Region <- barplot(sr_wydatki_dla_Regionu$srednia,
+                  main = "Średnie wydatki na osobe w zależności od regionu",
+                  xlab = "Średnia wysokość wydatków",
+                  ylim = c(0,19),
+                  xlim = c(0, 600),
+                  names.arg = c("Piemont i Valle d'Aosta", "Lombardia", "Trentino Alto Adige", "Veneto", "Friuli Venezia Giulia", "Liguria", "Emilia Romagna", "Toskania", "Umbria", "Marki", "Lazio", "Abruzja", "Molise","Kampania","Apulia","Basilicata", "Kalabria", "Sycylia", "Sardynia"),
+                  col = "lightblue",
+                  horiz = TRUE, las = 1, width = 0.85,  cex.names = 0.8, cex.main=1)
+```
+
+```{r echo=FALSE}
+(wyswietl <- sr_wydatki_dla_Regionu %>%
+arrange(srednia))
+```
+
+<br/>W regionach należących do północnej części Włoch średnie wydatki na osobę są wyższe niż na południu. Najmniej wydaje się na Sycylii, co potwierdza fakt, że w tych rejonach bardzo ciężko założyć własną działalność gospodarczą, lub znaleźć dobrze płatną pracę. Dlatego dużo młodych osób wyjeżdża na północ Włoch w poszukiwaniu lepszych perspektyw. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Przygotowanie tabeli 
+
+**Wyjaśnienie nazw kolumn zebranych w tabeli:**
+
+// Ancost - rok budowy domu/miejsca zamieszkania ?
+
+- TIPFAM - typ rodziny
+- NC - liczba osób w gospodarstwie domowym
+- Mese - miesiąc, w którym powstał wydatek
+- C_1201 Cielęcina i wołowina
+- C_1202 Mięso wołowe
+- C_1203 Mięso wieprzowe
+- C_1204 Konina
+- C_1205 Mięso baranie i jagnięce
+- C_1206 Drób
+- C_1207 Króliki, indyki, dziczyzna
+- C_1208 Wędliny (kiełbasy, bekon, szynka, würstel)
+- C_1209 Przetwory i konserwy mięsne (żywność dietetyczna)
+
+
+*w wersji ostatecznej projektu w tej tabeli będą znajdować się wszystkie dane, jakich potrzebuję*
+```{r}
+tabelaDostosowana <- dane %>%
+                        select(TIPFAM,
+                                NC,
+                                Mese,
+                                C_1201, 
+                                C_1202, 
+                                C_1203, 
+                                C_1204, 
+                                C_1205, 
+                                C_1206, 
+                                C_1207, 
+                                C_1208, 
+                                C_1209)
+```
+
+
+# Przygotowanie danych
+
+
+Na początku sprawdzam typ zmiennych w kolumnach, żeby upewnić się, że sumowanie danych z wiersza będzie poprawną operacją:
+
+```{r}
+typeof(tabelaDostosowana$C_1201)
+```
+
+
+Dodaję kolumnę zawierającą sumę wydatków każdej rodziny na mięso:
+
+```{r}
+wydatkiMieso <- tabelaDostosowana %>% 
+  mutate(miesoRazem = C_1201 + C_1202 + C_1203 + C_1204 + C_1205 + C_1206 + C_1207 + C_1208 + C_1209)
+```
+
+
+Sprawdzam występowanie ewentualnych braków w danych:
+
+```{r}
+md.pattern(wydatkiMieso)
+```
+
+
+Podstawowe statystyki w kolumnach:
+
+```{r}
+summary(wydatkiMieso)
+```
+
+*duże różnice pomiędzy wartością maksymalną, minimalną oraz średnią w poszczególnych kategoriach oraz kolumnie zbiorowej wskazują na występowanie sporych wartości odstających, które należy usunąć przed przystąpieniem do dalszej analizy*
+
+
+Struktura danych przedstawiona na wykresie pudełkowym:
+
+```{r fig.width=12, fig.height=7}
+
+pudelko1 <- wydatkiMieso %>%
+  ggplot() + 
+  geom_boxplot(aes(x = miesoRazem),
+               fill = "lightcyan2",
+               color = "black") +
+  theme_minimal(base_size = 15,         
+              base_family = "Courier",
+              base_line_size    = 0.4) +
+  labs(title="Wykres pudełkowy łącznych wydatków na mięso", 
+       x = "Wydatki") 
+  
+pudelko1
+```
+
+Struktura danych przedstawiona na histogramie:
+
+```{r fig.width=12, fig.height=7}
+hist1 <- wydatkiMieso %>%
+  ggplot() + 
+  geom_histogram(mapping = aes(x = miesoRazem, y = ..density..),
+                 bins = sqrt(nrow(wydatkiMieso)),
+                 fill = "rosybrown1",
+                 color = "black") +
+  labs(title="Histogram łącznych wydatków na mięso wraz z krzywą gęstości", 
+       x = "Wydatki", 
+       y = "Rodziny") +
+  geom_density(aes(x = miesoRazem),
+               color = "salmon4",
+               fill = "thistle2",
+               alpha = 0.3,
+               size = 0.7) +
+  theme_minimal(base_size = 15,         
+              base_family = "Courier",
+              base_line_size    = 0.4)
+hist1
+```
+
+Zestawiam wykresy pudełkowe kolejnych kolumn zawierających wydatki na poszczególne rodzaje mięs:
+
+```{r fig.width=12, fig.height=8}
+boxplot(miesa, las = 2, col = "paleturquoise2")
+```
+
+Wykresy wskazują na wysoką skośność prawostronną i występowanie wartości odstających.
+
+
+# Usuwanie wartości odstających 
+
+Tworzę tabelę pozbawioną wierszy z wartościami odstającymi na podstawie wartości w kolumnie sumującej wydatki na poszczególne rodzaje mięs:
+
+```{r}
+sprawdzenie <- quantile(wydatkiMieso$miesoRazem, c(0.9, 0.95, 0.99))
+sprawdzenie
+```
+
+
+*Postanawiam usunąć 1% wierszy z największą wartością zsumowanych wydatków:*
+
+```{r}
+wydatkiMiesoNieodstajace <- wydatkiMieso %>%
+  filter(miesoRazem < 402.2362)
+
+wydatkiMiesoNieodstajace$Mese <- factor(wydatkiMiesoNieodstajace$Mese,levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"))
+```
+
+
+# Struktura wydatków na mięso 
+
+Po usunięciu wartości odstających można przystąpić do weryfikacji struktury wydatków na mięso względem różnych czynników. 
+
+```{r}
+struktura <- ggplot(wydatkiMiesoNieodstajace, aes(x = as.factor(Mese), y = NC)) + 
+  geom_tile(aes(fill = miesoRazem)) +
+  scale_fill_continuous(low = "mediumpurple4", high = "white") +
+  theme_minimal(base_size = 15,         
+              base_family = "Courier",
+              base_line_size    = 0.4) +
+  labs(title="Mapa cieplna łącznych wydatków na mięso przy \npodziale na miesiąc i ilość osób w rodzinie", 
+       x = "Miesiąc", 
+       y = "Ilość osób w rodzinie")
+struktura
+```
+Patrząc na mapę cieplną można zauważyć, że największe wydatki na mięso występują w marcu.
+
+
+```{r}
+pozbierana <- gather(wydatkiMiesoNieodstajace, "RodzajMiesa", "Wydatek", 4:12)
+```
+
+Mapa cieplna wydatków na poszczególne rodzaje mięsa zależna od miesiąca:
+```{r}
+struktura1 <- ggplot(pozbierana, aes(x = as.factor(Mese), y = RodzajMiesa)) + 
+  geom_tile(aes(fill = Wydatek)) +
+  scale_fill_continuous(low = "mediumpurple4", high = "white") +
+  theme_minimal(base_size = 15,         
+              base_family = "Courier",
+              base_line_size    = 0.4) +
+  labs(title="Mapa cieplna wydatków na rodzaje mięsa w \nw poszczególnych miesiącach", 
+       x = "Miesiąc", 
+       y = "Rodzaj mięsa")
+struktura1
+```
+
+
+
+
+
+tutaj jest takie ogólne obejrzenie danych:
+
+
+
+# Analiza wyników ankiety i podstawowych statystyk
+
+## W którym miesiącu wydatki na mięso są największe:
+
+```{r}
+najwiekszeWydatki <- wydatkiMiesoNieodstajace %>%
+  count(Mese, wt = miesoRazem, sort = TRUE)
+najwiekszeWydatki
+```
+Największe wydatki na mięso u rodzin Włoskich występują w kwietniu, później w lutym i styczniu
+
+
+## Który typ rodziny wydaje najwięcej na mięso:
+
+```{r}
+wydatkiTypRodziny <- wydatkiMiesoNieodstajace %>%
+  group_by(TIPFAM) %>%
+  summarise(sredniWydatek = mean(miesoRazem))
+wydatkiTypRodziny
+```
+
+Najwięcej wydaje typ rodziny nr 8 (Coppia con 2 figli = Para z 2 dzieci), najmniej typ nr 1 (Persona sola con meno di 35 anni = Osoba samotna w wieku poniżej 35 lat)
+
+Przy czym badane typy rodzin TIPFAM to:
+
+- nr 1: Persona sola con meno di 35 anni = Osoba samotna w wieku poniżej 35 lat
+- nr 3: Persona sola con 65 anni e più = Osoba samotna, która ukończyła 65 lat
+- nr 4: Coppia senza figli con Persona di Riferimento con meno di 35 anni = Bezdzietna para, gdzie respondent to osoba poniżej 35 roku życia
+- nr 6: Coppia senza figli con Persona di Riferimento con 65 anni e più = Bezdzietna para, gdzie respondent to osoba powyżej 65 roku życia
+- nr 7: Coppia con 1 figlio = Para z 1 dzieckiem
+- nr 8: Coppia con 2 figli = Para z 2 dzieci
+- nr 10: Monogenitore = Samotny rodzic
+
+a ich liczebność przedstawia się następująco:
+
+```{r}
+typyRodzin <- wydatkiMiesoNieodstajace %>%
+  count(TIPFAM)
+typyRodzin
+```
+Tabela kontyngencji dla typów rodzin oraz ilości osób w domostwie:
+
+```{r}
+kontTypRodzinyIloscOsob <- table(wydatkiMiesoNieodstajace$TIPFAM, y = wydatkiMiesoNieodstajace$NC)
+kontTypRodzinyIloscOsob
+```
+
+
+
+
+A tutaj dałam hipotezy różne:
+
+
+
+
+# Hipotezy
+
+
+## Pierwsza
+
+*Największy udział w wydatkach w ciągu roku na mięso u rodzin włoskich stanowią wydatki na wędliny*
+
+```{r}
+sumyWydatkow <- colSums(wydatkiMiesoNieodstajace[(4:12)])
+sumyWydatkow
+```
+
+Zgodnie z wynikami największy udział w wydatkach w ciągu roku na mięso stanowią wydatki na cielęcinę i wołowinę (C_1201). Dopiero następnymi największymi są wydatki na wędliny (C_1208). 
+
+Odrzucam zatem hipotezę pierwszą, wędliny nie stanowią największego udziału w wydatkach na mięso w ciągu roku u rodzin włoskich.
+
+
+## Druga
+
+*Wysokość wydatków na mięso ogółem zależy od miesiąca (ANOVA lub nieparametryczny + post-hoc)*
+Przyjmuję poziom istotności 5%.
+
+By móc przeprowadzić test ANOVA, spełnione muszą być założenia:
+
+1. Homogeniczność wariancji
+2. Skala ilościowa zmiennej zależnej (spełnione)
+3. Rozkład normalny podgrup
+4. Niezależność obserwacji (spełnione)
+
+```{r}
+typeof(wydatkiMiesoNieodstajace$Mese)
+wydatkiMiesoNieodstajace$Mese <- as.character(wydatkiMiesoNieodstajace$Mese)
+```
+
+Weryfikacja założeń ANOVY:
+```{r}
+# Jednorodność (homogeniczność) wariancji w podgrupach
+leveneTest(miesoRazem ~ Mese, data = wydatkiMiesoNieodstajace)
+```
+
+Przyjmując poziom istotności 0.05 odrzucam hipotezę zerową testu Levene mówiącą o braku różnic w wariancji pomiędzy grupami na rzecz hipotezy alternatywnej - pomiędzy grupami występują istotne różnice w wariancji.
+
+W przypadku niespełnienia jednego z założeń ANOVY wykonuję jej odpowiednik - nieparametryczny test Kruskala-Wallisa:
+
+```{r}
+kruskal.test(miesoRazem ~ Mese, data = wydatkiMiesoNieodstajace)
+```
+
+Dla p-value > 0.05 nie ma podstaw do odrzucenia hipotezy zerowej testu Kruskala-Wallisa mówiącą o braku istotnych różnic pomiędzy grupami. Oznacza to, że wysokość wydatków na mięso ogółem nie zależy istotnie od miesiąca przy poziomie istotności 5%.
+
+
+## Trzecia
+
+*Wydatki na cielęcinę i wołowinę są bardziej zróżnicowanie wielkościowo pomiędzy rodzinami niż wydatki na wędliny*
+
+```{r}
+rozsmarowane <- wydatkiMiesoNieodstajace %>% select(C_1201, C_1208)
+doLevene <- gather(rozsmarowane, key = "rodzajMiesa", value = "wydatek")
+doLevene
+```
+
+```{r}
+leveneTest(wydatek ~ rodzajMiesa, data = doLevene)
+```
+
+p-value < 0.05, zatem odrzucam hipotezę zerową testu Levene mówiącą o braku istotnych różnic w wariancji pomiędzy grupami na rzecz hipotezy alternatywnej - pomiędzy grupami występują istotne różnice w wariancji.
+
+```{r}
+var(wydatkiMiesoNieodstajace$C_1201)
+var(wydatkiMiesoNieodstajace$C_1208)
+```
+
+Zgodnie z przewidywaniami, większa wariancja występuje w przypadku wydatków na cielęcinę i wołowinę niż wędliny. Przyjmuję zatem hipotezę trzecią. 
+
+## Czwarta
+
+*Wysokość całkowitych wydatków na mięso zależy od typu rodziny (ANOVA lub nieparametryczny + post-hoc)*
+
+```{r}
+kruskal.test(miesoRazem ~ TIPFAM, data = wydatkiMiesoNieodstajace)
+```
+
+Dla p-value < 0.05 odrzucam hipotezę zerową testu Kruskala-Wallisa mówiącą o braku istotnych różnic pomiędzy grupami. Oznacza to, że wysokość wydatków na mięso ogółem zależy istotnie od typu rodziny przy poziomie istotności 5%.
+Przeprowadzam test post-hoc Dunna:
+
+```{r}
+dunn.test(wydatkiMiesoNieodstajace$miesoRazem, wydatkiMiesoNieodstajace$TIPFAM, method="bonferroni")
+```
+
+Na podstawie wyników testu post-hoc (przy p-value <= 0.025 odrzucona H0 mówiąca o występowaniu istotnych różnic pomiędzy grupami) można stwierdzić, że istotne różnice w całkowitych wydatkach na mięso występują wyłącznie pomiędzy typem rodziny 1 a 3. Są to:
+
+- nr 1: Persona sola con meno di 35 anni = Osoba samotna w wieku poniżej 35 lat
+- nr 3: Persona sola con 65 anni e più = Osoba samotna, która ukończyła 65 lat
