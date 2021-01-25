@@ -596,7 +596,7 @@ doLogistycznej$miesoRazem <- ifelse(doLogistycznej$miesoRazem>=srednia, 1, 0) # 
 
 
 ```{r}
-#glm(formula = miesoRazem ~ TIPFAM + Mese + NC, data = wydatkiMiesoNieodstajace, family = binomial)
+glm(formula = miesoRazem ~ TIPFAM + Mese + NC, data = wydatkiMiesoNieodstajace, family = binomial)
 ```
 
 
