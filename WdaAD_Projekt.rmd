@@ -1,6 +1,6 @@
 ---
 title: "WdAD_Projekt"
-author: "Anna Pietryka"
+author: "Anna Pietryka, Klaudia Pajor"
 date: "21 12 2020"
 output: html_document
 ---
@@ -23,7 +23,7 @@ library(readr)
 ```
 
 ```{r}
-dane <- read.delim("~/Desktop/Studia/Semestr 3/Analiza danych/ćwiczenia/HBS_Microdati_Anno_2011.txt")
+dane <- read.delim("HBS_Microdati_Anno_2011.txt")
 ```
 
 
@@ -81,6 +81,7 @@ text(h_il$mids,h_il$counts,labels=h_il$counts, adj=c(0.5, -0.5))
 ```
 
 Z powyższego histogramu wynika, że w badaniu nie wzięły udziały gospodarstwa domowe, które liczą więcej niż 6 członków.
+
 
 > **Ilość zbadanych gospodarstw domowych z poszczególnych regionów.**
 
@@ -237,7 +238,6 @@ arrange(srednia))
 - C_1209 Przetwory i konserwy mięsne (żywność dietetyczna)
 
 
-*w wersji ostatecznej projektu w tej tabeli będą znajdować się wszystkie dane, jakich potrzebuję*
 ```{r}
 tabelaDostosowana <- dane %>%
                         select(TIPFAM,
@@ -333,7 +333,7 @@ hist1
 Zestawiam wykresy pudełkowe kolejnych kolumn zawierających wydatki na poszczególne rodzaje mięs:
 
 ```{r fig.width=12, fig.height=8}
-boxplot(miesa, las = 2, col = "paleturquoise2")
+boxplot(wydatkiMieso[4:12], las = 2, col = "paleturquoise2")
 ```
 
 Wykresy wskazują na wysoką skośność prawostronną i występowanie wartości odstających.
