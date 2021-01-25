@@ -544,7 +544,7 @@ Dla p-value > 0.05 nie ma podstaw do odrzucenia hipotezy zerowej testu Kruskala-
 
 *Wydatki na cielęcinę i wołowinę są bardziej zróżnicowanie wielkościowo pomiędzy rodzinami niż wydatki na wędliny*
 
-```{r}
+```{r include=FALSE}
 zebrane1 <- wydatkiMiesoNieodstajace %>% select(C_1201, C_1208)
 doLevene <- gather(zebrane1, key = "rodzajMiesa", value = "wydatek")
 doLevene
