@@ -239,51 +239,107 @@ Ze wstępnej analizy wynika, że wśród badanych nie znalazły się gospodarstw
 Wydatki na wedniliny w rodznie z dwojka dzieci.
 
 ```{r echo=FALSE}
+#PRZYGOTOWANIE POTRZEBNYCH TABEL
+# WYBRANIE DANYCH DOTYCZACYCH TYLKO GR PARA Z 2 DZIECI
 wydatki_rodzina_2dzieci <- dane_wydatki %>%
   filter(Typ_rodziny == "8") %>%
-  select(Typ_rodziny, Il_osób, Suma_wydatków )
+  select(Typ_rodziny, Il_osób, Suma_wydatków, Wydatki_na_os )
 
 wedliny_rodzina_2dzieci <- dane %>%
   filter(TIPFAM == "8") %>%
   select(TIPFAM, C_1208)
 
-dane_model <- as.data.frame(cbind(wydatki_rodzina_2dzieci$Suma_wydatków, wedliny_rodzina_2dzieci$C_1208))
-colnames(dane_model) <- c("Suma_wydatków", "Wydatki_wedliny")
+dane_model <- as.data.frame(cbind(wydatki_rodzina_2dzieci, wedliny_rodzina_2dzieci$C_1208))
+colnames(dane_model) <- c("Typ_rodziny","Il_osób","Suma_wydatków", "Wydatki_na_os", "Wydatki_na_wedliny")
 
+dane_model <- dane_model %>%
+  mutate(Wydatki_na_os_wedliny = Wydatki_na_wedliny/Il_osób)
+  
+
+# PODSUMOWANIE ZBIORU ABY SPRAWDZIC WARTOSCI MAX I MIN
 summary(dane_model)
+
 ```
 
-```{r fig.width=20, fig.height=8}
-#dzile na kwantyle srednie wydatki na wedliny
+```{r fig.width=20, fig.height=15}
+#WYKRES 1
+#PODZIAL WYDATKOW NA GRUPE 25 KWANTYLI
+dane_model <- dane_model %>%
+  mutate(quantile  = ntile(Wydatki_na_wedliny, 25))
 
-dane_Engl_1 <- dane_model %>%
-  select(Wydatki_wedliny)%>%
-  mutate(quantile  = ntile(Wydatki_wedliny, 50))
+#USUNIECIE WARTOSCI MAX PONIEWAZ JEST WYRAzNIE ODDASTAJACA
+dane_model_czyste <- dane_model %>%
+  filter(quantile != 25)
+  
+#POGRUPOWANIE WARTOSCI WEDLUG WYZEJ WYZNACZONYCH GRUP. OBLICZENIE SREDNIEJ Z KAZDEJ GRUPY
+(sr_wydatki_wedliny <- dane_model_czyste %>%
+  group_by(quantile) %>%
+ summarise(srednie_w_gr_dochodowej = mean(Wydatki_na_wedliny))) 
 
-dane_Engl_1 %>%
-  ggplot(aes(x = quantile, y = Wydatki_wedliny)) +
+summary(sr_wydatki_wedliny)
+
+#WYKRES
+sr_wydatki_wedliny %>%
+  ggplot(aes(x = quantile, y = srednie_w_gr_dochodowej)) +
            geom_line(size = 1) +
-           geom_point(size = 3)
-
+           geom_point(size = 1.75) +
+  labs(title = "Średnie miesięczne wydatki na wędliny w danej grupie dochodowej wśród par z dwójką dzieci",
+       x = "Numer grupy",
+       y = "Średnie wydatki w euro ")+
+  theme_minimal(base_size = 25)
+  
 ```
 
 ```{r fig.width=20, fig.height=8}
+#WYKRES 2
+#OBLICZENIE UDZUALU WYDATKOW NA WEDLINY W WYDATKACH OGOLEM
+dane_Engl_2 <- dane_model_czyste%>%
+  mutate(udzial_w_wydatkach  = Wydatki_na_wedliny/Suma_wydatków)
 
-dane_Engl_2 <- dane_model%>%
-  mutate(udzial_w_wydatkach  = Wydatki_wedliny/Suma_wydatków)
-
+#PODZIAL NA GRUPY - 25 KWANTYLI
 dane_Engl_2 <- dane_Engl_2 %>%
   select(udzial_w_wydatkach) %>%
-  mutate(quantile = ntile (udzial_w_wydatkach, 50))
+  mutate(quantile = ntile (udzial_w_wydatkach, 25))
 
-dane_Engl_2 %>%
-  ggplot(aes(x = quantile, y = udzial_w_wydatkach)) +
+#SREDNIA DLA KAZDEJ PODGRUPY
+(sr_udzial_w_wydatkach <- dane_Engl_2%>%
+  group_by(quantile) %>%
+  summarise(sr_udzial = mean(udzial_w_wydatkach)))
+  
+summary(sr_udzial_w_wydatkach)
+
+#WYKRES
+sr_udzial_w_wydatkach %>%
+  ggplot(aes(x = quantile, y = sr_udzial)) +
            geom_line(size = 1) +
-           geom_point(size = 3)
+           geom_point(size = 1.75)+
+  labs(title = "Średni miesięczny udział wydatków na wędliny w rozchodach danej grupy para z dwójką dzieci",
+       x ="Numer grupy",
+       y = "Udział wydatków")+
+  theme_light(base_size = 25)
 
 ```
+<br/>
+Wyżej wskazane wykresy wskazują że wydatki na wędliny dla grupy dochodowej para z dwójką dzieci są dobrem luksusowym. W następnym kroku zostanie dopasowana funkcja.
+
+```{r echo=FALSE}
+
+dane_sortowanie <- dane_model_czyste %>%
+  arrange(Wydatki_na_wedliny)
+
+#REGRESJA
+#X - dochod na glowe, tu dochud rozpozadzalny na glowe
+#Y - wydatki na wedliny na glowe
+#C - poziom dochodu przy ktorym pojawia sie wydatek - 3815
+  
+
+m <- nls(Wydatki_na_os_wedliny ~ A * Wydatki_na_os * (Wydatki_na_os - C) / (B + Wydatki_na_os), data = dane_model_czyste, start = list(A = 3, B = 3, C = 11))
 
 
+coef(m)
+summary(m)
+
+```
 
 
 
