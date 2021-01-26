@@ -30,7 +30,7 @@ dane <- read.delim("HBS_Microdati_Anno_2011.txt")
 
 # Wstęp
 
-Do wykonania analizy został wykorzystany zbiór danych dotyczący wydatków gospodarstw domowych we Włoszech w roku 2011.
+Do wykonania analizy został wykorzystany zbiór danych dotyczący wydatków gospodarstw domowych we Włoszech w roku 2011.Analiza wydatków włoskich gospodarstw domowych może być interesująca ze wzglądu na fakt, że Włochy przez wielu są kojarzone jako miejsce nieustannej zabawy i dobrej kawy. Tymczasem Włochy to jedna z największych gospodarek Europy. W ostatnich latach na północy zaczęto tworzyć wiele rozwijających się firm, co oznacza inwestycję w kulturę, edukację i zdrowie. Czy te zmiany, których skutki widzimy dziś, były już zauważalne w 2011 roku?  Aby odpowiedzieć na te pytania przeanalizujemy wydatki na edukację, zdrowie i kulturę w włoskich rodzinach. Analizie poddamy także wydatki na mięso, które jest jednym z droższych składników diety. 
 
 > **Wstępne zapoznanie z danymi dotyczacymi rodzin wloskich** </br>
 > **Typy rodzin według klasyfikacji.**
@@ -128,12 +128,18 @@ W każdym miesiącu poddano badaniu podobną ilość gospodarstw domowych.
 
 > **Wydatki na osobę w gospodarstwach domowych.**
 
-Do obliczenia wydatków przypadających na jedną osobę będą brane tylko wydatki uwzględnione w liść zakupów danego gospodarstwa domowego. Kolumny oznaczone symbolami *„C_[…]"* nie wszystkie zaliczają się do tej grupy. Niektóre z nich świadczą o posiadaniu prze rodzinę określonego dobra.
+Do obliczenia wydatków przypadających na jedną osobę będą brane tylko wydatki uwzględnione w liść zakupów danego gospodarstwa domowego. Kolumny oznaczone symbolami *„C_[…]"* nie wszystkie zaliczają się do tej grupy. Niektóre z nich świadczą o posiadaniu przez rodzinę określonego dobra.
 
 ```{r echo=FALSE}
-wydatki <- dane[,(453:562)]
+#wydatki <- dane[,(453:562)]
+
+wydatki <- dane %>%
+  select(starts_with("C_")) 
+
+suma_wydatkow <- as.data.frame(rowSums(wydatki,na.rm = TRUE))
+  
 il_osob_w_gospodarstwie <- dane$NC
-dane_wydatki <- as.data.frame(cbind(il_osob_w_gospodarstwie, rowSums(wydatki)))
+dane_wydatki <- as.data.frame(cbind(il_osob_w_gospodarstwie, rowSums(wydatki,na.rm = TRUE)))
 colnames(dane_wydatki) <- c("Il_osób", "Suma_wydatków")
 
 dane_wydatki <- dane_wydatki %>%
@@ -143,7 +149,7 @@ dane_wydatki <- dane_wydatki %>%
 dane %>%
   ggplot() +
   geom_histogram(mapping = aes(x = dane_wydatki$Wydatki_na_os),
-                 binwidth = 40,
+                 binwidth = 30,
                  closed = "left",
                  fill = "lightgrey",
                  colour = "black")+
@@ -221,6 +227,11 @@ arrange(srednia))
 
 <br/>W regionach należących do północnej części Włoch średnie wydatki na osobę są wyższe niż na południu. Najmniej wydaje się na Sycylii, co potwierdza fakt, że w tych rejonach bardzo ciężko założyć własną działalność gospodarczą, lub znaleźć dobrze płatną pracę. Dlatego dużo młodych osób wyjeżdża na północ Włoch w poszukiwaniu lepszych perspektyw. 
 
+<br/>
+
+> **Podsumowanie**
+
+Ze wstępnej analizy wynika, że wśród badanych nie znalazły się gospodarstwa domowe, złożone z jednej osoby samotnej lub pary bez dzieci w wieku 35-64 lat. Oznacza, to, że osoby z tego przedziału wiekowego najczęściej żyją w parach lub jako samotni rodzice. W analizowane grupie największą grupę stanową rodziny z jednym i dwójką dzieci, co świadczy, że Włosi chętnie zakładają rodziny i starają się o dzieci. Widać wyraźne różnice pomiędzy wydatkami gospodarstw domowych pochodzących z północnej i z południowej części Włoch. Zastanawiający jest fakt, że na bieżące wydatki średnio najmniej wydają rodziny z dwójką dzieci. Można przypuszczać, że większą część wydatków poświęcają na edukację dzieci lub zdrowie. 
 
 
 
