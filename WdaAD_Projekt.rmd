@@ -642,23 +642,31 @@ Na podstawie wyników testu post-hoc (przy p-value <= 0.025 odrzucona H0 mówią
 
 # Regresja logistyczna
 
-Czy to, że rodzina przekracza średnią wielkość wydatków na mięso, jest zależne od typu rodziny, miesiąca i ilości osób w domostwie (MOŻNA DODAĆ JESZCZE INNE OPCJE)?
+Czy to, że rodzina przekracza średnią miesięczną wysokość wydatków na mięso, jest zależne od typu rodziny, miesiąca lub ilości osób w domostwie (MOŻNA DODAĆ JESZCZE INNE OPCJE)?
 
 ```{r}
-srednia <- mean(wydatkiMiesoNieodstajace$miesoRazem)
 doLogistycznej <- wydatkiMiesoNieodstajace
-doLogistycznej$miesoRazem <- ifelse(doLogistycznej$miesoRazem>=srednia, 1, 0) # jeśli wydali więcej niż wynosi średnia, zastępuję 1
+
+# tworzę kolumnę z kwartałami
+doLogistycznej$Kwartal <- ifelse(doLogistycznej$Mese == "1" | doLogistycznej$Mese == "2" | doLogistycznej$Mese == "3", "pierwszy", ifelse(doLogistycznej$Mese == "4" | doLogistycznej$Mese == "5" | doLogistycznej$Mese == "6", "drugi", ifelse(doLogistycznej$Mese == "7" | doLogistycznej$Mese == "8" | doLogistycznej$Mese == "9", "trzeci", ifelse(doLogistycznej$Mese == "10" | doLogistycznej$Mese == "11" | doLogistycznej$Mese == "12", "czwarty", doLogistycznej$Mese))))
+
+doLogistycznej$Kwartal <- factor(doLogistycznej$Kwartal,levels = c("pierwszy", "drugi", "trzeci", "czwarty"))
+
+srednia <- mean(wydatkiMiesoNieodstajace$miesoRazem)
+doLogistycznej$doMiesaRazem <- ifelse(doLogistycznej$miesoRazem>=srednia, 1, 0) # jeśli wydali więcej niż wynosi średnia, zastępuję 1
 ```
 
 
 ```{r}
-glm(formula = miesoRazem ~ TIPFAM + Mese + NC, data = doLogistycznej, family = binomial)
+wynikLogist1 <- glm(formula = doMiesaRazem ~ TIPFAM + Kwartal + NC, data = doLogistycznej, family = binomial)
+summary(wynikLogist1)
 ```
 
+Zgodnie z wynikami powyższej regresji, fakt, czy rodzina przekracza średnią miesięczną wysokość wydatków jest istotnie zależny od typu rodziny oraz ilości osób w rodzinie.
 
-
-
-
+```{r}
+# 
+```
 
 
 
