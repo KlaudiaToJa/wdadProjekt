@@ -263,6 +263,10 @@ summary(dane_model)
 
 ```{r fig.width=20, fig.height=15}
 #WYKRES 1
+
+dane_model <- dane_model %>%
+  filter(Wydatki_na_wedliny > 0)
+
 #PODZIAL WYDATKOW NA GRUPE 25 KWANTYLI
 dane_model <- dane_model %>%
   mutate(quantile  = ntile(Wydatki_na_wedliny, 25))
@@ -324,16 +328,18 @@ Wyżej wskazane wykresy wskazują że wydatki na wędliny dla grupy dochodowej p
 
 ```{r echo=FALSE}
 
-dane_sortowanie <- dane_model_czyste %>%
-  arrange(Wydatki_na_wedliny)
+(dane_sortowanie <- dane_model_czyste %>%
+  arrange(Wydatki_na_wedliny))
+```
 
+```{r echo=FALSE}
 #REGRESJA
 #X - dochod na glowe, tu dochud rozpozadzalny na glowe
 #Y - wydatki na wedliny na glowe
 #C - poziom dochodu przy ktorym pojawia sie wydatek - 3815
   
 
-m <- nls(Wydatki_na_os_wedliny ~ A * Wydatki_na_os * (Wydatki_na_os - C) / (B + Wydatki_na_os), data = dane_model_czyste, start = list(A = 3, B = 3, C = 11))
+m <- nls(Wydatki_na_os_wedliny ~ A * Wydatki_na_os * (Wydatki_na_os - C) / (B + Wydatki_na_os), data = dane_model_czyste, start = list(A = 1, B = 8, C = 3815))
 
 
 coef(m)
