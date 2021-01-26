@@ -360,24 +360,23 @@ summary(m)
 
 
 
-# Przygotowanie tabeli 
+# Przygotowanie tabeli do analizy miesięcznych wydatków na mięso
 
 **Wyjaśnienie nazw kolumn zebranych w tabeli:**
-
-// Ancost - rok budowy domu/miejsca zamieszkania ?
 
 - TIPFAM - typ rodziny
 - NC - liczba osób w gospodarstwie domowym
 - Mese - miesiąc, w którym powstał wydatek
-- C_1201 Cielęcina i wołowina
-- C_1202 Mięso wołowe
-- C_1203 Mięso wieprzowe
-- C_1204 Konina
-- C_1205 Mięso baranie i jagnięce
-- C_1206 Drób
-- C_1207 Króliki, indyki, dziczyzna
-- C_1208 Wędliny (kiełbasy, bekon, szynka, würstel)
-- C_1209 Przetwory i konserwy mięsne (żywność dietetyczna)
+- Eta4_1 - Wiek respondentów zebranych według przedziałów wiekowych: 0-17 (1) 18-34 (2) 35-65 (3) >65 (4)
+- C_1201 - Cielęcina i wołowina
+- C_1202 - Mięso wołowe
+- C_1203 - Mięso wieprzowe
+- C_1204 - Konina
+- C_1205 - Mięso baranie i jagnięce
+- C_1206 - Drób
+- C_1207 - Króliki, indyki, dziczyzna
+- C_1208 - Wędliny (kiełbasy, bekon, szynka, würstel)
+- C_1209 - Przetwory i konserwy mięsne (żywność dietetyczna)
 
 
 ```{r}
@@ -385,6 +384,7 @@ tabelaDostosowana <- dane %>%
                         select(TIPFAM,
                                 NC,
                                 Mese,
+                                Eta4_1,
                                 C_1201, 
                                 C_1202, 
                                 C_1203, 
@@ -475,10 +475,10 @@ hist1
 Zestawiam wykresy pudełkowe kolejnych kolumn zawierających wydatki na poszczególne rodzaje mięs:
 
 ```{r fig.width=12, fig.height=8}
-boxplot(wydatkiMieso[4:12], las = 2, col = "paleturquoise2")
+boxplot(wydatkiMieso[5:13], las = 2, col = "paleturquoise2")
 ```
 
-Wykresy wskazują na wysoką skośność prawostronną i występowanie wartości odstających.
+Wykresy wskazują na wysoką skośność prawostronną wartości oraz występowanie wartości odstających, które należy usunąć przed dokładniejszą analizą danych. W dodatku można zauważyć spore różnice w wydatkach na poszczególne rodzaje mięs, a przy tym sporą ilość wysokości wydatków zbliżonych lub równych zeru (perwsza kolumna histogramu). Wartości odstające usunięte zostaną zweryfikowane w kolumnie sumującej wydatki na wszystkie rodzaje mięs, a wiersze z takimi wartościami będą usunięte i nie brane pod uwagę podczas dalszej analizy.
 
 
 # Usuwanie wartości odstających 
@@ -517,11 +517,11 @@ struktura <- ggplot(wydatkiMiesoNieodstajace, aes(x = as.factor(Mese), y = NC)) 
        y = "Ilość osób w rodzinie")
 struktura
 ```
-Patrząc na mapę cieplną można zauważyć, że największe wydatki na mięso występują w marcu.
+Patrząc na mapę cieplną można zauważyć, że najwyższe wydatki na mięso występują w marcu przy liczbie osób równej 3 i 5, a te najniższe - zobrazowane przez najciemniejszy kolor - w lutym dla ilości osób mniejszej niż 4, maju, lipcu i listopadzie dla jednej osoby w rodzinie, w październiku dla dwóch osób. Całość wykresu potwierdza intuicję, że wraz ze zwiększaniem się ilości osób w rodzinie, wydatki na mięso również wzrastają. W dalszej części analizy zostanie to zweryfikowane dodatkowo za pomocą regresji.
 
 
 ```{r}
-pozbierana <- gather(wydatkiMiesoNieodstajace, "RodzajMiesa", "Wydatek", 4:12)
+pozbierana <- gather(wydatkiMiesoNieodstajace, "RodzajMiesa", "Wydatek", 5:13)
 ```
 
 Mapa cieplna wydatków na poszczególne rodzaje mięsa zależna od miesiąca:
@@ -537,13 +537,7 @@ struktura1 <- ggplot(pozbierana, aes(x = as.factor(Mese), y = RodzajMiesa)) +
        y = "Rodzaj mięsa")
 struktura1
 ```
-
-
-
-
-
-tutaj jest takie ogólne obejrzenie danych:
-
+Według powyższego wykresu zauważyć można, że struktura wydatków na różne rodzaje mięs zmienia się w poszczególnych miesiącach, choć w przypadku C_1204, C_1205 i C_1209 jest niemal (lub całkowicie) niewidoczna.
 
 
 # Analiza podstawowych statystyk dla mięs
@@ -560,14 +554,14 @@ Największe wydatki na mięso u rodzin Włoskich występują w kwietniu, późni
 
 ## Który typ rodziny wydaje najwięcej na mięso:
 
-```{r}
+```{r warning=FALSE}
 wydatkiTypRodziny <- wydatkiMiesoNieodstajace %>%
   group_by(TIPFAM) %>%
   summarise(sredniWydatek = mean(miesoRazem))
 wydatkiTypRodziny
 ```
 
-Najwięcej wydaje typ rodziny nr 8 (Coppia con 2 figli = Para z 2 dzieci), najmniej typ nr 1 (Persona sola con meno di 35 anni = Osoba samotna w wieku poniżej 35 lat)
+Najwięcej wydaje typ rodziny nr 8 (Coppia con 2 figli = Para z 2 dzieci), najmniej typ nr 1 (Persona sola con meno di 35 anni = Osoba samotna w wieku poniżej 35 lat). 
 
 Przy czym badane typy rodzin TIPFAM to:
 
@@ -579,7 +573,7 @@ Przy czym badane typy rodzin TIPFAM to:
 - nr 8: Coppia con 2 figli = Para z 2 dzieci
 - nr 10: Monogenitore = Samotny rodzic
 
-a ich liczebność przedstawia się następująco:
+Ich liczebność przedstawia się następująco:
 
 ```{r}
 typyRodzin <- wydatkiMiesoNieodstajace %>%
@@ -592,13 +586,7 @@ Tabela kontyngencji dla typów rodzin oraz ilości osób w domostwie:
 kontTypRodzinyIloscOsob <- table(wydatkiMiesoNieodstajace$TIPFAM, y = wydatkiMiesoNieodstajace$NC)
 kontTypRodzinyIloscOsob
 ```
-
-
-
-
-A tutaj dałam hipotezy różne:
-
-
+W tabeli kontyngencji widać zdawałoby się niezgodność - typem rodziny 8 (para z dwójką dzieci) jest 3639 domostw z czterema mieszkańcami, 849 z pięcioma i 100 z sześcioma. Najprawdopodobniej wkradł się błąd, ponieważ w nocie metodologicznej opisany jest również typ rodziny nr 9, para z trójką i więcej dzieci, który nie występuje w danych. Z drugiej strony może to być również przypadek, gdzie rodzice z dwójką dorosłych już dzieci mieszkają w jednym domu z rodzinami tychże dzieci i przez to ilość osób w domostwie zwiększa się - niestety na podstawie otrzymanych danych nie jest możliwe ustalenie stanu faktycznego gospodarstw domowych w tym aspekcie.
 
 
 # Hipotezy
@@ -606,10 +594,10 @@ A tutaj dałam hipotezy różne:
 
 ## Pierwsza
 
-*Największy udział w wydatkach w ciągu roku na mięso u rodzin włoskich stanowią wydatki na wędliny*
+>*Największy udział w wydatkach w ciągu roku na mięso u rodzin włoskich stanowią wydatki na wędliny*
 
 ```{r}
-sumyWydatkow <- colSums(wydatkiMiesoNieodstajace[(4:12)])
+sumyWydatkow <- colSums(wydatkiMiesoNieodstajace[(5:13)])
 sumyWydatkow
 ```
 
@@ -620,7 +608,7 @@ Odrzucam zatem hipotezę pierwszą, wędliny nie stanowią największego udział
 
 ## Druga
 
-*Wysokość wydatków na mięso ogółem zależy od miesiąca (ANOVA lub nieparametryczny + post-hoc)*
+>*Wysokość wydatków na mięso ogółem zależy od miesiąca*
 Przyjmuję poziom istotności 5%.
 
 By móc przeprowadzić test ANOVA, spełnione muszą być założenia:
@@ -654,7 +642,7 @@ Dla p-value > 0.05 nie ma podstaw do odrzucenia hipotezy zerowej testu Kruskala-
 
 ## Trzecia
 
-*Wydatki na cielęcinę i wołowinę są bardziej zróżnicowanie wielkościowo pomiędzy rodzinami niż wydatki na wędliny*
+>*Wydatki na cielęcinę i wołowinę są bardziej zróżnicowanie wielkościowo pomiędzy rodzinami niż wydatki na wędliny*
 
 ```{r include=FALSE}
 zebrane1 <- wydatkiMiesoNieodstajace %>% select(C_1201, C_1208)
@@ -677,7 +665,7 @@ Zgodnie z przewidywaniami, większa wariancja występuje w przypadku wydatków n
 
 ## Czwarta
 
-*Wysokość całkowitych wydatków na mięso zależy od typu rodziny (ANOVA lub nieparametryczny + post-hoc)*
+>*Wysokość całkowitych wydatków na mięso zależy od typu rodziny*
 
 ```{r}
 kruskal.test(miesoRazem ~ TIPFAM, data = wydatkiMiesoNieodstajace)
@@ -698,7 +686,7 @@ Na podstawie wyników testu post-hoc (przy p-value <= 0.025 odrzucona H0 mówią
 
 # Regresja logistyczna
 
-Czy to, że rodzina przekracza średnią miesięczną wysokość wydatków na mięso, jest zależne od typu rodziny, miesiąca lub ilości osób w domostwie (MOŻNA DODAĆ JESZCZE INNE OPCJE)?
+>*Czy to, że rodzina przekracza średnią miesięczną wysokość wydatków na mięso, ma istotny związek z typem rodziny, wiekiem osoby kontaktowej lub kwartałami, w których dokonywane były zakupy?*
 
 ```{r}
 doLogistycznej <- wydatkiMiesoNieodstajace
@@ -709,38 +697,89 @@ doLogistycznej$Kwartal <- ifelse(doLogistycznej$Mese == "1" | doLogistycznej$Mes
 doLogistycznej$Kwartal <- factor(doLogistycznej$Kwartal,levels = c("pierwszy", "drugi", "trzeci", "czwarty"))
 
 srednia <- mean(wydatkiMiesoNieodstajace$miesoRazem)
-doLogistycznej$doMiesaRazem <- ifelse(doLogistycznej$miesoRazem>=srednia, 1, 0) # jeśli wydali więcej niż wynosi średnia, zastępuję 1
+doLogistycznej$doMiesaRazem <- ifelse(doLogistycznej$miesoRazem>=srednia, 1, 0) # jeśli wydali więcej niż wynosi średnia lub równo średniej, zastępuję numerem 1, w przeciwnym wypadku 0
 ```
 
-
 ```{r}
-wynikLogist1 <- glm(formula = doMiesaRazem ~ TIPFAM + Kwartal + NC, data = doLogistycznej, family = binomial)
+wynikLogist1 <- glm(formula = doMiesaRazem ~ as.factor(TIPFAM) + Kwartal + as.factor(Eta4_1), data = doLogistycznej, family = binomial)
 summary(wynikLogist1)
 ```
 
-Zgodnie z wynikami powyższej regresji, fakt, czy rodzina przekracza średnią miesięczną wysokość wydatków jest istotnie zależny od typu rodziny oraz ilości osób w rodzinie.
+Klasy referencyjne to: dla typu rodziny nr 1, osoba samotna w wieku poniżej 35 lat, dla kwartałów kwartał pierwszy, a dla wieku respondentów przedział wiekowy oznaczony numerem 2, czyli od 18 do 34 lat.
 
-```{r}
-# 
+Typ rodziny TIPFAM *przypomnienie*:
+
+- nr 1: Osoba samotna w wieku poniżej 35 lat
+- nr 3: Osoba samotna, która ukończyła 65 lat
+- nr 4: Bezdzietna para, gdzie respondent to osoba poniżej 35 roku życia
+- nr 6: Bezdzietna para, gdzie respondent to osoba powyżej 65 roku życia
+- nr 7: Para z 1 dzieckiem
+- nr 8: Para z 2 dzieci
+- nr 10: Samotny rodzic
+
+Zgodnie z wynikami powyższej regresji, można wysunąć następujące wnioski:
+
+*obliczenia dla wzoru*
+
+$$S = \frac1{e^{Estimate}}$$
+
+```{r echo=FALSE}
+# typ rodziny 3
+a <- exp(-0.19154)
+1/a
 ```
+Osoby samotne, które ukończyły 65 rok życia, wydają mniej pieniędzy na mięso niż osoby samotne w wieku poniżej 35 lat. Szansa przekroczenia średniej wydatków przez osoby samotne młodsze stanowi 121% szansy osób starszych.
 
+```{r echo=FALSE}
+# typ rodziny 4
+b <- exp(0.87294)
+1/b
+```
+Bezdzietna para, gdzie respondent to osoba poniżej 35 roku życia, wydaje więcej na mięso niż osoba samotna w tym samym przedziale wiekowym. Szansa przekroczenia średniej wydatków u osób samotnych poniżej 35 roku życia stanowi około 41,8% szansy takiej pary.
 
+```{r echo=FALSE}
+# typ rodziny 6
+c <- exp(0.84346)
+1/c
+```
+W przypadku bezdzietnej pary, w której respondent to osoba powyżej 65 roku życia, sytuacja jest nieco analogiczna do pary bezdzietnej przy respondencie poniżej 35 roku życia. Wydają na mięso niewiele mniej, ponieważ szansa na przekroczenie średniej wydatków u osób samotnych stanowi około 43% szansy takiej pary (o 1,2 punkty procentowe więcej niż dla bezdzietnej pary z respondentem poniżej 35 roku życia).
 
+```{r echo=FALSE}
+# typ rodziny 7
+d <- exp(1.36341)
+1/d
+```
+Pary z jednym dzieckiem wydają na mięso jeszcze więcej niż poprzednie analizowane grupy. Szansa przekroczenia średniej wydatków osób samotnych stanowi 25,6% szans takiej pary.
 
+```{r echo=FALSE}
+# typ rodziny 8
+e <- exp(1.77262)
+1/e
+```
+Wydającym na mięso najwięcej spośród pozostałych typów rodzin jest typ nr 8, para z dwójką dzieci. Szanse przekroczenia średniej wydatków u osoby samotnej poniżej 35 roku życia stanowi zaledwie niecałe 17% szansy pary z dwójką dzieci (8,6 punktów procentowych mniej niż u par z jednym dzieckiem).
 
+```{r echo=FALSE}
+# typ rodziny 10
+f <- exp(1.11686)
+1/f
+```
+Szanse na przekroczenie średniej wydatków samotnego rodzica plasuje się pomiędzy szansami par bezdzietnych a par z jednym dzieckiem. Takie szanse u osób samotnych to 32,7% szans samotnych rodziców. Uzyskujemy zatem informację, że szanse na przekroczenie średniej wydatków u samotnych rodziców plasują się niemal w połowie pomiędzy parą z jednym dzieckiem a parą bezdzietną z respondentem poniżej 35 roku życia. Co więcej, być może wbrew przekonaniom, samotny rodzic ma szansę wydać na mięso więcej niż para bezdzietna. 
 
+```{r echo=FALSE}
+# kwartał 4
+g <- exp(-0.06567)
+1/g
+```
+Istotną - choć zdecydowanie mniej niż pozostałe czynniki - okazuje się również różnica pomiędzy szansą przekroczenia średniej wydatków na mięso podczas trwania kwartału czwartego - taka szansa w kwartale pierwszym wynosi około 106,6% szansy w kwartale czwartym. 
 
+```{r echo=FALSE}
+# grupa wiekowa 3
+h <- exp(0.26569)
+1/h
 
-
-
-
-
-
-
-
-
-
-
-
-
+# grupa wiekowa 4
+i <- exp(0.23365)
+1/i
+```
+Również istotnym okazuje się przynależność do grupy wiekowej respondenta. W zbiorze danych występują wyłącznie respondenci przynależący do grup 2, 3, 4, co odpowiada przedziałom wiekowym 18-34, 35-65, >65. W porównaniu do grupy wiekowej 18-34, która jest klasą referencyjną, można zauważyć, że szansa na wydatek powyżej średniej na mięsa wynosi około 76,7% szansy grupy wiekowej 3 oraz 79,2% szansy grupy wiekowej 4. Oznacza to, że najmniejsze szanse na taki wydatek spośród grup wiekowych występują u rodzin z respondentem w wieku 35-65 lat, największe zaś dla respondentów w wieku 18-34 lat.
 
