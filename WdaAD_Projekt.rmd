@@ -131,12 +131,9 @@ W każdym miesiącu poddano badaniu podobną ilość gospodarstw domowych.
 Do obliczenia wydatków przypadających na jedną osobę będą brane tylko wydatki uwzględnione w liść zakupów danego gospodarstwa domowego. Kolumny oznaczone symbolami *„C_[…]"* nie wszystkie zaliczają się do tej grupy. Niektóre z nich świadczą o posiadaniu przez rodzinę określonego dobra.
 
 ```{r echo=FALSE}
-#wydatki <- dane[,(453:562)]
 
 wydatki <- dane %>%
   select(starts_with("C_")) 
-
-suma_wydatkow <- as.data.frame(rowSums(wydatki,na.rm = TRUE))
   
 il_osob_w_gospodarstwie <- dane$NC
 dane_wydatki <- as.data.frame(cbind(il_osob_w_gospodarstwie, rowSums(wydatki,na.rm = TRUE)))
@@ -235,8 +232,56 @@ Ze wstępnej analizy wynika, że wśród badanych nie znalazły się gospodarstw
 
 
 
+# Krzywe Engla. 
 
+> **Dobra normalne**
 
+Wydatki na wedniliny w rodznie z dwojka dzieci.
+
+```{r echo=FALSE}
+wydatki_rodzina_2dzieci <- dane_wydatki %>%
+  filter(Typ_rodziny == "8") %>%
+  select(Typ_rodziny, Il_osób, Suma_wydatków )
+
+wedliny_rodzina_2dzieci <- dane %>%
+  filter(TIPFAM == "8") %>%
+  select(TIPFAM, C_1208)
+
+dane_model <- as.data.frame(cbind(wydatki_rodzina_2dzieci$Suma_wydatków, wedliny_rodzina_2dzieci$C_1208))
+colnames(dane_model) <- c("Suma_wydatków", "Wydatki_wedliny")
+
+summary(dane_model)
+```
+
+```{r fig.width=20, fig.height=8}
+#dzile na kwantyle srednie wydatki na wedliny
+
+dane_Engl_1 <- dane_model %>%
+  select(Wydatki_wedliny)%>%
+  mutate(quantile  = ntile(Wydatki_wedliny, 50))
+
+dane_Engl_1 %>%
+  ggplot(aes(x = quantile, y = Wydatki_wedliny)) +
+           geom_line(size = 1) +
+           geom_point(size = 3)
+
+```
+
+```{r fig.width=20, fig.height=8}
+
+dane_Engl_2 <- dane_model%>%
+  mutate(udzial_w_wydatkach  = Wydatki_wedliny/Suma_wydatków)
+
+dane_Engl_2 <- dane_Engl_2 %>%
+  select(udzial_w_wydatkach) %>%
+  mutate(quantile = ntile (udzial_w_wydatkach, 50))
+
+dane_Engl_2 %>%
+  ggplot(aes(x = quantile, y = udzial_w_wydatkach)) +
+           geom_line(size = 1) +
+           geom_point(size = 3)
+
+```
 
 
 
