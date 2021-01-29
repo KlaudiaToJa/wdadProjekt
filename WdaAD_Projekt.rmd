@@ -23,7 +23,7 @@ library(ggplot2)
 library(readr)
 ```
 
-```{r}
+```{r include=FALSE}
 dane <- read.delim("HBS_Microdati_Anno_2011.txt")
 ```
 
