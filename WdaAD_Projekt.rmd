@@ -503,7 +503,6 @@ dane_model_pelne <- dane_model %>%
 summary(dane_model_pelne)
 
 ```
-
 ```{r echo=FALSE}
 dane_model_pelne %>%
   ggplot() +
@@ -518,20 +517,6 @@ dane_model_pelne %>%
               base_line_size    = 0.3)
 ```
 
-```{r echo=FALSE}
-ostatnie_obs <- quantile(dane_model_pelne$Suma_wydatków, c(0.97, 0.98, 0.99))
-ostatnie_obs
-```
-
-```{r include=FALSE}
-dane_model_czyste <- dane_model_pelne %>%
-  filter(Suma_wydatków < 9768.057)
-```
-
-```{r echo=FALSE}
-summary(dane_model_czyste)
-```
-
 ```{r fig.width=20, fig.height=15}
 #WYKRES 1
 
@@ -540,15 +525,15 @@ dane_model_czyste <- dane_model_czyste %>%
 
 #PODZIAL WYDATKOW NA GRUPE 25 KWANTYLI
 dane_model_grupy <- dane_model_czyste %>%
-  mutate(quantile  = ntile(Wydatki_na_wedliny, 25))
+  mutate(quantile  = ntile(Suma_wydatków, 25))
 
 summary(dane_model_grupy)
 #USUNIECIE WARTOSCI MAX PONIEWAZ JEST WYRAzNIE ODDASTAJACA
-dane_model_grupy_bez25 <- dane_model_grupy %>%
-  filter(quantile != 25)
+#dane_model_grupy_bez25 <- dane_model_grupy %>%
+  #filter(quantile != 25)
   
 #POGRUPOWANIE WARTOSCI WEDLUG WYZEJ WYZNACZONYCH GRUP. OBLICZENIE SREDNIEJ Z KAZDEJ GRUPY
-(sr_wydatki_wedliny <- dane_model_grupy_bez25 %>%
+(sr_wydatki_wedliny <- dane_model_grupy %>%
   group_by(quantile) %>%
  summarise(srednie_w_gr_dochodowej = mean(Wydatki_na_wedliny))) 
 
@@ -569,24 +554,23 @@ sr_wydatki_wedliny %>%
 ```{r fig.width=20, fig.height=8}
 #WYKRES 2
 #OBLICZENIE UDZUALU WYDATKOW NA WEDLINY W WYDATKACH OGOLEM
-dane_Engl <- dane_model_czyste%>%
+dane_Engl <- dane_model_grupy%>%
   mutate(udzial_w_wydatkach  = Wydatki_na_wedliny/Suma_wydatków)
 
 #PODZIAL NA GRUPY - 25 KWANTYLI
 dane_Engl_grupy <- dane_Engl %>%
-  select(udzial_w_wydatkach) %>%
-  mutate(quantile = ntile (udzial_w_wydatkach, 25))
+  mutate(quantile_u = ntile (Suma_wydatków, 25))
 
 #SREDNIA DLA KAZDEJ PODGRUPY
 (sr_udzial_w_wydatkach <- dane_Engl_grupy%>%
-  group_by(quantile) %>%
+  group_by(quantile_u) %>%
   summarise(sr_udzial = mean(udzial_w_wydatkach)))
   
 summary(sr_udzial_w_wydatkach)
 
 #WYKRES
 sr_udzial_w_wydatkach %>%
-  ggplot(aes(x = quantile, y = sr_udzial)) +
+  ggplot(aes(x = quantile_u, y = sr_udzial)) +
            geom_line(size = 1) +
            geom_point(size = 5)+
   labs(title = "Średni miesięczny udział wydatków na wędliny w rozchodach danej grupy para z dzeckiem",
@@ -596,38 +580,44 @@ sr_udzial_w_wydatkach %>%
 
 ```
 <br/>
-Wyżej wskazane wykresy wskazują że wydatki na wędliny dla grupy dochodowej para z dwójką dzieci są dobrem luksusowym. W następnym kroku zostanie dopasowana funkcja.
+Wyżej wskazane wykresy wskazują że wydatki na wędliny dla grupy dochodowej para z dzieckiem są dobrem wyższego rzedu. W następnym kroku zostanie dopasowana funkcja.
+
 
 ```{r echo=FALSE}
 
-(dane_sortowanie <- dane_model_czyste %>%
-  arrange(Wydatki_na_wedliny))
-```
-
-```{r echo=FALSE}
-#REGRESJA 
-#X - dochod na glowe, tu dochod rozpozadzalny na glowe
-#Y - wydatki na wedliny na glowe
-#C - poziom dochodu przy ktorym pojawia sie wydatek - 3315.39
-
-Srednie_Wydatki <- dane_model_czyste %>%
-  select(Suma_wydatków) %>%
-  mutate(quantile = ntile (Suma_wydatków, 25)) 
-  
-Srednie_Wydatki<- Srednie_Wydatki%>%
+dane_model_koncowy <- dane_model_czyste %>%
+  mutate(quantile  = ntile(Suma_wydatków, 25))%>%
   group_by(quantile) %>%
-  summarise(sr_wydatki = mean(Suma_wydatków))
+  mutate(srednie_dochod_w_gr = mean(Suma_wydatków))%>%
+  mutate(sredni_wydatkek_w_gr_dochodowej = mean(Wydatki_na_wedliny))
 
-Srednie_Wydatki_model <- as.data.frame(cbind(Srednie_Wydatki$sr_wydatki,sr_wydatki_wedliny$srednie_w_gr_dochodowej))
-colnames(Srednie_Wydatki) <- c("sr_wydatki","sr_wydatki_wedliny")
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=8, fig.height=8 }
+#REGRESJA 
+#X - sredni calkowity dochod w gospodarstwie w kwantylach
+#Y - sredni wydatk na wedliny w kwantylach
+#C - sredni poziom dochodu przy ktorym pojawia sie wydatek	
 
-m <- nls(Wydatki_na_os_wedliny ~ (A * Wydatki_na_os * (Wydatki_na_os - C) / (B + Wydatki_na_os)), data = dane_model_czyste, start = list(A = 19, B = 200,C = 3315))
+m <- nls(sredni_wydatkek_w_gr_dochodowej ~ (a * (srednie_dochod_w_gr - c))/(srednie_dochod_w_gr + b), data = dane_model_koncowy, start = list(a=max(dane_model_koncowy$sredni_wydatkek_w_gr_dochodowej),b=100, c = 934))
 
 coef(m)
 summary(m)
+
+
+a1 <- as.numeric(coef(m)[1])
+b1 <- as.numeric(coef(m)[2])
+c1 <- as.numeric(coef(m)[3])
+
+curve((a1*(x - c1))/(x + b1), from = 1, to = 2000)
+
+eq = function(x){(a1*(x - c1))/(x + b1)}
+
+ggplot() + stat_function(fun = eq, data.frame(x=c(1,2000)), mapping=aes(x=x), col= "red") +
+  geom_point(mapping=aes(dane_model_koncowy$srednie_dochod_w_gr,dane_model_koncowy$sredni_wydatkek_w_gr_dochodowej))+
+  labs(x = "Średnie miesięczne rozchody ogółem w danej grupie dochodowej para z 1 dzieckiem", 
+       y = "Średni  miesięczny wydatek na wędliny w danej grupie dochodowej para z 1 dzieckiem")+
+  theme_minimal()
 
 ```
 
