@@ -184,7 +184,7 @@ boxplot(wydatkiMieso[5:13], las = 2, col = "paleturquoise2", main = "Wykresy pud
 Wykresy wskazują na wysoką skośność prawostronną wartości oraz występowanie wartości odstających, które należy usunąć przed dokładniejszą analizą danych. W dodatku można zauważyć spore różnice w wydatkach na poszczególne rodzaje mięs, a przy tym sporą ilość wydatków o wysokości zbliżonej lub równej zeru (pierwsza kolumna histogramu). Wartości odstające zostaną zweryfikowane w kolumnie sumującej wydatki na wszystkie rodzaje mięs, a wiersze z takimi wartościami będą usunięte i nie brane pod uwagę podczas dalszej analizy.
 
  
->**Usuwanie wartości odstających**
+> **Usuwanie wartości odstających**
 
 Tworzę tabelę pozbawioną wierszy z wartościami odstającymi na podstawie wartości w kolumnie sumującej wydatki na poszczególne rodzaje mięs:
 
