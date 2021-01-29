@@ -28,11 +28,12 @@ dane <- read.delim("HBS_Microdati_Anno_2011.txt")
 ```
 
 
-## Wstęp
+# Wstęp
 
-Do wykonania analizy został wykorzystany zbiór danych dotyczący wydatków gospodarstw domowych we Włoszech w roku 2011.Analiza wydatków włoskich gospodarstw domowych może być interesująca ze wzglądu na fakt, że Włochy przez wielu są kojarzone jako miejsce nieustannej zabawy i dobrej kawy. Tymczasem Włochy to jedna z największych gospodarek Europy. W ostatnich latach na północy zaczęto tworzyć wiele rozwijających się firm, co oznacza inwestycję w kulturę, edukację i zdrowie.
+Do wykonania analizy został wykorzystany zbiór danych dotyczący wydatków gospodarstw domowych we Włoszech w roku 2013. Analiza wydatków włoskich gospodarstw domowych może być interesująca ze wzglądu na fakt, że Włochy przez wielu są kojarzone jako miejsce nieustannej zabawy i dobrej kawy. Tymczasem Włochy to jedna z największych gospodarek Europy. W ostatnich latach na północy zaczęto tworzyć wiele rozwijających się firm, co oznacza inwestycję w kulturę, edukację i zdrowie. 
+Tym jednak, co zostało tematem przewodnim niniejszej analizy, jest struktura wydatków na mięso i jego konkretne rodzaje. Analizie poddano również strukturę badanych rodzin.
 
-#Przygotowanie tabeli z danymi potrzebnymi do przeprowadzenia analizy.</br>
+## Przygotowanie tabeli z danymi potrzebnymi do przeprowadzenia analizy.
 
 > **Wyjaśnienie nazw kolumn zebranych w tabeli:**
 
@@ -40,10 +41,11 @@ Do wykonania analizy został wykorzystany zbiór danych dotyczący wydatków gos
 - Regione - region
 - NC - liczba osób w gospodarstwie domowym
 - Mese - miesiąc, w którym powstał wydatek
-- Eta4_1 - Wiek respondentów zebranych według przedziałów wiekowych: 
-</br>0-17 (1) 
+- Eta4_1 - Wiek respondentów podany według przedziałów wiekowych: 
+</br>0-17 (1)
 </br>18-34 (2) 
-</br>35-65 (3) >65 (4)
+</br>35-65 (3) 
+</br>65 (4)
 - C_1201 - Cielęcina i wołowina
 - C_1202 - Mięso wołowe
 - C_1203 - Mięso wieprzowe
@@ -89,7 +91,7 @@ tabelaDostosowana <- dane %>%
 tabelaDostosowana <- as.data.frame(cbind(tabelaDostosowana, "Wszystkie_wydatki" = dane_wydatki$Wszystkie_wydatki, "Wszystkie_wydatki_na_os"=dane_wydatki$Wszystkie_wydatki_na_os))
 ```
 
-</br> **Fragment tabeli z danymi:**
+> **Fragment tabeli z danymi:**</br>
 ```{r echo = FALSE}
 head(tabelaDostosowana)
 ```
@@ -179,7 +181,7 @@ boxplot(wydatkiMieso[5:13], las = 2, col = "paleturquoise2", main = "Wykresy pud
 ```
 
 </br>
-Wykresy wskazują na wysoką skośność prawostronną wartości oraz występowanie wartości odstających, które należy usunąć przed dokładniejszą analizą danych. W dodatku można zauważyć spore różnice w wydatkach na poszczególne rodzaje mięs, a przy tym sporą ilość wysokości wydatków zbliżonych lub równych zeru (perwsza kolumna histogramu). Wartości odstające usunięte zostaną zweryfikowane w kolumnie sumującej wydatki na wszystkie rodzaje mięs, a wiersze z takimi wartościami będą usunięte i nie brane pod uwagę podczas dalszej analizy.
+Wykresy wskazują na wysoką skośność prawostronną wartości oraz występowanie wartości odstających, które należy usunąć przed dokładniejszą analizą danych. W dodatku można zauważyć spore różnice w wydatkach na poszczególne rodzaje mięs, a przy tym sporą ilość wydatków o wysokości zbliżonej lub równej zeru (pierwsza kolumna histogramu). Wartości odstające zostaną zweryfikowane w kolumnie sumującej wydatki na wszystkie rodzaje mięs, a wiersze z takimi wartościami będą usunięte i nie brane pod uwagę podczas dalszej analizy.
 
 </br>
 >**Usuwanie wartości odstających**
@@ -208,11 +210,11 @@ head(wydatkiMiesoNieodstajace)
 ```
 
 
-#Inforamcje o próbie. Wstępne statystyki.
+#Informacje o próbie. Wstępne statystyki.
 </br>
 > **Typy rodzin według klasyfikacji.**
 
-W badaniu rodziny zostały podzielone na 11 typów w zależności od tego czy w badanym gospodarstwie domowym znajduje się osoba samotna, para bez dzieci, para z dziećmi, samotny rodzic lub inne.
+W badaniu rodziny zostały podzielone na 11 typów w zależności od tego, czy w badanym gospodarstwie domowym znajduje się osoba samotna, para bez dzieci, para z dziećmi, samotny rodzic lub inne.
 <br/>Typy rodzin:
 <br/>1 = Osoba samotna w wieku poniżej 35 lat
 <br/>2 = Osoba samotna w wieku 35-64 lat
@@ -251,12 +253,12 @@ wydatkiMiesoNieodstajace %>%
        y = "Ilość") 
 ```
 
-<br/> Z powyższego histogramu i tabeli wynika, że w badaniu nie wzięły udziału rodziny oznaczone według typu:
-  <br/>- 2 - Osoba samotna w wieku 35-64 lat
-  <br/>- 5 - Para bez dzieci z osobą kontaktową w wieku 35-64 lat
-  <br/>- 9 - Para z 3 i więcej dziećmi
-  <br/>- 11 - inne typy
-  <br/>
+Z powyższego histogramu i tabeli wynika, że w badaniu nie wzięły udziału rodziny oznaczone według typu:
+
+  - nr 2 - Osoba samotna w wieku 35-64 lat
+  - nr 5 - Para bez dzieci z osobą kontaktową w wieku 35-64 lat
+  - nr 9 - Para z 3 i więcej dziećmi
+  - nr 11 - inne typy
   
 > **Ilość członków gospodarstwa domowego w analizowanych rodzinach.**
 
@@ -268,13 +270,14 @@ wydatkiMiesoNieodstajace %>%
                  breaks = seq(1,12,1),
                  fill = "darkgrey",
                  colour = "black")+
-  labs(title="Histogram częstości czonków gospodarstwa domowego", 
+  labs(title="Histogram częstości występowania danej ilości członków gospodarstwa domowego", 
        x = "Ilość członków", 
        y = "Ilość") 
 
 ```
 
-Z powyższego histogramu wynika, że w badaniu nie wzięły udziały gospodarstwa domowe, które liczą więcej niż 6 członków. Jest to informacja wymagajca dalszego zweryfikowania, ponieważ we wczeniejsze analize wykazano, że w badaniu nie występuje typ rodziny para z trójką trójk i wicej dziećmi. Tworzymy tabelę kontyngencji dla typów rodzin oraz ilości osób w domostwie.
+Z powyższego histogramu wynika, że w badaniu nie wzięły udziały gospodarstwa domowe, które liczą więcej niż 6 członków. Jest to informacja wymagająca dalszego zweryfikowania, ponieważ we wcześniejsze, analizie wykazano, że w badaniu nie występuje typ rodziny para z trójką i więcej dzieci. 
+Tworzymy zatem tabelę kontyngencji dla typów rodzin oraz ilości osób w domostwie.
 
 </br>
 >**Tabela kontyngencji**
@@ -285,8 +288,7 @@ kontTypRodzinyIloscOsob
 ```
 
 </br>
-W tabeli kontyngencji widać zdawałoby się niezgodność - typem rodziny 8 (para z dwójką dzieci) jest 3639 domostw z czterema mieszkańcami, 849 z pięcioma i 100 z sześcioma. Najprawdopodobniej wkradł się błąd, ponieważ w nocie metodologicznej opisany jest również typ rodziny nr 9, para z trójką i więcej dzieci, który nie występuje w danych. Z drugiej strony może to być również przypadek, gdzie rodzice z dwójką dorosłych już dzieci mieszkają w jednym domu z rodzinami tychże dzieci i przez to ilość osób w domostwie zwiększa się - niestety na podstawie otrzymanych danych nie jest możliwe ustalenie stanu faktycznego gospodarstw domowych w tym aspekcie.
-
+W tabeli kontyngencji dostrzec można - zdawałoby się - niezgodność: typem rodziny 8 (para z dwójką dzieci) jest 3639 domostw z czterema mieszkańcami, 849 z pięcioma i 100 z sześcioma. Najprawdopodobniej wkradł się błąd, ponieważ w nocie metodologicznej opisany jest również typ rodziny nr 9, para z trójką i więcej dzieci, który nie występuje w danych. Z drugiej strony może to być również przypadek, gdzie rodzice z dwójką dorosłych już dzieci mieszkają w jednym domu z rodzinami tychże dzieci i przez to ilość osób w domostwie zwiększa się, lecz rodzina respondenta jest mniejsza - niestety na podstawie otrzymanych danych nie jest możliwe ustalenie stanu faktycznego gospodarstw domowych w tym aspekcie, zatem są to wyłącznie przypuszczenia.
 
 > **Ilość zbadanych gospodarstw domowych z poszczególnych regionów.**
 
@@ -303,10 +305,10 @@ wydatkiMiesoNieodstajace %>%
        y = "Ilość") 
 ```
 
-W oznaczeniach regionów Włoskich nie występuje liczba 2 dlatego, że Piemont i Valle d'Aosta zostały połączone. Najwięcej gospodarstw domowych poddano badaniu w Lombardii.
+W oznaczeniach regionów włoskich nie występuje liczba 2 dlatego, że Piemont i Valle d'Aosta zostały połączone. Najwięcej gospodarstw domowych poddano badaniu w Lombardii.
 Porównując ilość badanych gospodarstw z wielkością danych regionów można stwierdzić, że w tych zajmujących większą powierzchnię poddano badaniu większą liczbę mieszkańców.
 
-> **Ilość poddanych badaniu gospodarstw domowych w zależności od miesiąca w którym odbywało się badanie.**
+> **Ilość poddanych badaniu gospodarstw domowych w zależności od miesiąca, w którym odbywało się badanie.**
 
 ```{r echo=FALSE}
 wydatkiMiesoNieodstajace %>%
@@ -343,7 +345,7 @@ wydatkiMiesoNieodstajace %>%
 summary(wydatkiMiesoNieodstajace)
 ```
 
-Wykres *„Wydatki na osobę”* ma rozkład χ2. Najwięcej gospodarstw domowych wydaje na osobę pomiędzy 300, a 400 euro. Wraz ze wzorotem wydatków na osobę ilość gospodarstw  domowych zaliczających się do danej grupy jest coraz mniejsza. 
+Wykres *„Wydatki na osobę”* ma rozkład podobny do rozkładu χ2. Najwięcej gospodarstw domowych wydaje na jedną osobę pomiędzy 300, a 400 euro. Wraz ze wzrostem wydatków na osobę ilość gospodarstw  domowych zaliczających się do danej grupy jest coraz mniejsza. 
 
 > **Średnia ilość wydatków na osobę w poszczególnych typach rodzin.**
 
@@ -369,7 +371,7 @@ sr_wydatki_dla_typRodziny %>%
 ```
 
 <br/>
-Największe średnie wydatki na osobę występują w gospodarstwie domowym, w którym znajduję się jedna osoba samotna w wieku poniżej 35 lat. Jest to stosunkowo zrozumiałe, ponieważ taka osoba sama pokrywa opłaty związane z mieszkaniem, rachunkami i utrzymaniem. Znacznie mniej wydają osoby starsze, powyżej 65 roku życia, mieszkające samotnie. Ta różnica może wynikać z tego, że osoby do 35 roku życia, zazwyczaj rozwijają swoją karierę zawodową, zarabiają więcej, a także prowadzą bardziej towarzyski tryb życia. Natomiast osoby starsze nauczone są oszczędzenia i przez to ich średnie wydatki są znacznie niższe. 
+Największe średnie wydatki na osobę występują w gospodarstwie domowym, w którym znajduję się jedna osoba samotna w wieku poniżej 35 lat. Jest to stosunkowo zrozumiałe, ponieważ taka osoba sama pokrywa opłaty związane z mieszkaniem, rachunkami i utrzymaniem. Znacznie mniej wydają osoby starsze, powyżej 65 roku życia, mieszkające samotnie. Ta różnica może wynikać z tego, że osoby do 35 roku życia zazwyczaj rozwijają swoją karierę zawodową, zarabiają więcej, a także prowadzą bardziej towarzyski tryb życia. Natomiast osoby starsze wolą oszczędzać i nie udzielają się towarzysko równie bardzo jak młodsze - przez to ich średnie wydatki są znacznie niższe. 
 
 <br/>
 Średnio najmniej wydają gospodarstwa domowe składające się z pary z dwójką dzieci. Może to być spowodowane nieścisłością w danych, która została opisana wcześniej.
@@ -401,7 +403,7 @@ sr_wydatki_dla_Regionu %>%
 arrange(srednia))
 ```
 
-<br/>W regionach należących do północnej części Włoch średnie wydatki na osobę są wyższe niż na południu. Najmniej wydaje się na Sycylii, co potwierdza fakt, że w tych rejonach bardzo ciężko założyć własną działalność gospodarczą, lub znaleźć dobrze płatną pracę. Dlatego dużo młodych osób wyjeżdża na północ Włoch w poszukiwaniu lepszych perspektyw. 
+<br/>W regionach należących do północnej części Włoch średnie wydatki na osobę są wyższe niż na południu. Najmniej wydaje się na Sycylii, co potwierdza fakt, że w tych rejonach bardzo ciężko założyć własną działalność gospodarczą lub znaleźć dobrze płatną pracę. Dlatego dużo młodych osób wyjeżdża na północ Włoch w poszukiwaniu lepszych perspektyw. 
 
 <br/>
 
@@ -824,3 +826,18 @@ i <- exp(0.23365)
 ```
 Również istotnym okazuje się przynależność do grupy wiekowej respondenta. W zbiorze danych występują wyłącznie respondenci przynależący do grup 2, 3, 4, co odpowiada przedziałom wiekowym 18-34, 35-65, >65. W porównaniu do grupy wiekowej 18-34, która jest klasą referencyjną, można zauważyć, że szansa na wydatek powyżej średniej na mięsa wynosi około 76,7% szansy grupy wiekowej 3 oraz 79,2% szansy grupy wiekowej 4. Oznacza to, że najmniejsze szanse na taki wydatek spośród grup wiekowych występują u rodzin z respondentem w wieku 35-65 lat, największe zaś dla respondentów w wieku 18-34 lat.
 
+
+
+# Podsumowanie
+
+Njabardziej interesujące wnioski z całości przeprowadzonych analiz są następujące:
+
+- Największe średnie wydatki na osobę występują w gospodarstwie domowym, w którym znajduje się jedna osoba samotna w wieku poniżej 35 lat, osoby powyżej 65 roku życia wydają znacznie mniej.
+Średnio najmniej wydają gospodarstwa domowe składające się z pary z dwójką dzieci.
+- W północnej części Włoch średnie wydatki na osobę są wyższe niż na południu. - Jeśli chodzi o spożycie mięsa, struktura wydatków na konkretne jego rodzaje nieznacznie zmienia się w kolejnych miesiącach. Największe wydatki obserwuje się w kwietniu oraz u typu rodziny para z dwójką dzieci (ten sam typ, który średnio wydaje najmniej).
+- Największy udział w wydatkach na mięso stanowią wydatki na cielęcinę i wołowinę.
+- Dodatkowo warto zaznaczyć, że to, czy rodzina włoska przekroczy średnią wysokość wydatków na mięso zależna jest od typu rodziny, wieku osoby kontaktowej (głowy rodziny), a także w małym stopniu od tego, czy wydatek występuje w kwartale czwartym.
+
+
+
+//POPRAWIĆ W HIPOTEZACH JAK ANIA POPRAWI SWOJE ZAMIAST PRZYJMUJĘ HIPOTEZĘ, ŻE NIE MA PODSTAW DO ODRZUCENIA HIPOTEZY ZEROWEJ. DOPISAĆ WNIOSKI Z HIPOTEZ JAK ANIA SKOŃCZY.
