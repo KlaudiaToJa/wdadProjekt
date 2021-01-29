@@ -505,6 +505,7 @@ dane_model_pelne <- dane_model %>%
 summary(dane_model_pelne)
 
 ```
+
 ```{r echo=FALSE}
 dane_model_pelne %>%
   ggplot() +
@@ -516,8 +517,19 @@ dane_model_pelne %>%
        x = "Wysokość wydatków", 
        y = "Ilość")+
   theme_minimal(base_size = 12,         
-              base_line_size    = 0.3)
+              base_line_size = 0.3)
 ```
+
+```{r echo = FALSE}
+obs_odstajace <- quantile(dane_model_pelne$Suma_wydatków, c(0.9, 0.95, 0.99))
+obs_odstajace
+```
+
+```{r echo = FALSE}
+dane_model_czyste <- dane_model_pelne %>%
+  filter(Suma_wydatków < 9768.057  )
+```
+
 
 ```{r fig.width=20, fig.height=15}
 #WYKRES 1
