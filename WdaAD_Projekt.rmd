@@ -28,352 +28,22 @@ dane <- read.delim("HBS_Microdati_Anno_2011.txt")
 ```
 
 
-# Wstęp
+## Wstęp
 
-Do wykonania analizy został wykorzystany zbiór danych dotyczący wydatków gospodarstw domowych we Włoszech w roku 2011.Analiza wydatków włoskich gospodarstw domowych może być interesująca ze wzglądu na fakt, że Włochy przez wielu są kojarzone jako miejsce nieustannej zabawy i dobrej kawy. Tymczasem Włochy to jedna z największych gospodarek Europy. W ostatnich latach na północy zaczęto tworzyć wiele rozwijających się firm, co oznacza inwestycję w kulturę, edukację i zdrowie. Czy te zmiany, których skutki widzimy dziś, były już zauważalne w 2011 roku?  Aby odpowiedzieć na te pytania przeanalizujemy wydatki na edukację, zdrowie i kulturę w włoskich rodzinach. Analizie poddamy także wydatki na mięso, które jest jednym z droższych składników diety. 
+Do wykonania analizy został wykorzystany zbiór danych dotyczący wydatków gospodarstw domowych we Włoszech w roku 2011.Analiza wydatków włoskich gospodarstw domowych może być interesująca ze wzglądu na fakt, że Włochy przez wielu są kojarzone jako miejsce nieustannej zabawy i dobrej kawy. Tymczasem Włochy to jedna z największych gospodarek Europy. W ostatnich latach na północy zaczęto tworzyć wiele rozwijających się firm, co oznacza inwestycję w kulturę, edukację i zdrowie.
 
-> **Wstępne zapoznanie z danymi dotyczacymi rodzin wloskich** </br>
-> **Typy rodzin według klasyfikacji.**
+#Przygotowanie tabeli z danymi potrzebnymi do przeprowadzenia analizy.</br>
 
-W badaniu rodziny zostały podzielone na 11 typów w zależności od tego czy w badanym gospodarstwie domowym znajduje się osoba samotna, para bez dzieci, para z dziećmi, samotny rodzic lub inne.
-<br/>Typy rodzin:
-<br/>1 = Osoba samotna w wieku poniżej 35 lat
-<br/>2 = Osoba samotna w wieku 35-64 lat
-<br/>3 = Osoba samotna w wieku 65 lat i starsza
-<br/>4 = Para bez dzieci z osobą kontaktową poniżej 35 roku życia
-<br/>5 = Para bez dzieci z osobą kontaktową w wieku 35-64 lat
-<br/>6 = Para bez dzieci z osobą kontaktową w wieku 65 lat i starszą
-<br/>7 = Para z 1 dzieckiem
-<br/>8 = Para z 2 dziećmi
-<br/>9 = Para z 3 i więcej dziećmi
-<br/>10 = Samotny rodzic
-<br/>11 = Inne typy
-
-```{r echo=FALSE}
-dane %>%
-  ggplot() +
-  geom_histogram(mapping = aes(x = TIPFAM),
-                 closed = "left",
-                 breaks = seq(1,12,1),
-                 fill = "darkgrey",
-                 colour = "black")+
-  labs(title="Histogram częstości występowania typu rodziny włoskiej w badaniu", 
-       x = "Typ rodziny", 
-       y = "Ilość") 
-
-```
-
-<br/> Z powyższego histogramu wynika, że w badaniu nie wzięły udziału rodziny oznaczone według typu:
-  <br/>- 2 - Osoba samotna w wieku 35-64 lat
-  <br/>- 5 - Para bez dzieci z osobą kontaktową w wieku 35-64 lat
-  <br/>- 9 - Para z 3 i więcej dziećmi
-  <br/>- 11 - inne typy
-  <br/>
-  
-  
-> **Ilość członków gospodarstwa domowego w analizowanych rodzinach.**
-
-```{r echo=FALSE}
-dane %>%
-  ggplot() +
-  geom_histogram(mapping = aes(x = NC),
-                 closed = "left",
-                 breaks = seq(1,12,1),
-                 fill = "darkgrey",
-                 colour = "black")+
-  labs(title="Histogram częstości czonków gospodarstwa domowego", 
-       x = "Ilość członków", 
-       y = "Ilość") 
-
-```
-
-Z powyższego histogramu wynika, że w badaniu nie wzięły udziały gospodarstwa domowe, które liczą więcej niż 6 członków.
-
-
-> **Ilość zbadanych gospodarstw domowych z poszczególnych regionów.**
-
-```{r echo=FALSE}
-dane %>%
-  ggplot() +
-  geom_histogram(mapping = aes(x = Regione),
-                 closed = "left",
-                 breaks = seq(1,21,1),
-                 fill = "darkgrey",
-                 colour = "black")+
-  labs(title="Ilość gospodarstw domowychw poszczególnych regionach", 
-       x = "Ilość gospodarstw", 
-       y = "Ilość") 
-```
-
-W oznaczeniach regionów Włoskich nie występuje liczba 2 dlatego, że Piemont i Valle d'Aosta zostały połączone. Najwięcej gospodarstw domowych poddano badaniu w Lombardii.
-Porównując ilość badanych gospodarstw z wielkością danych regionów można stwierdzić, że w tych zajmujących większą powierzchnię poddano badaniu większą liczbę mieszkańców.
-
-> **Ilość poddanych badaniu gospodarstw domowych w zależności od miesiąca w którym odbywało się badanie.**
-
-```{r echo=FALSE}
-dane %>%
-  ggplot() +
-  geom_histogram(mapping = aes(x = Mese),
-                 closed = "left",
-                 breaks = seq(1,13,1),
-                 fill = "darkgrey",
-                 colour = "black")+
-  labs(title="Ilość gospodarstw domowych zbadanych w zależności od miesiąca", 
-       x = "Ilość gospodarstw", 
-       y = "Ilość")
-
-```
-
-W każdym miesiącu poddano badaniu podobną ilość gospodarstw domowych.
-
-> **Wydatki na osobę w gospodarstwach domowych.**
-
-Do obliczenia wydatków przypadających na jedną osobę będą brane tylko wydatki uwzględnione w liść zakupów danego gospodarstwa domowego. Kolumny oznaczone symbolami *„C_[…]"* nie wszystkie zaliczają się do tej grupy. Niektóre z nich świadczą o posiadaniu przez rodzinę określonego dobra.
-
-```{r echo=FALSE}
-
-wydatki <- dane %>%
-  select(starts_with("C_")) 
-  
-il_osob_w_gospodarstwie <- dane$NC
-dane_wydatki <- as.data.frame(cbind(il_osob_w_gospodarstwie, rowSums(wydatki,na.rm = TRUE)))
-colnames(dane_wydatki) <- c("Il_osób", "Suma_wydatków")
-
-dane_wydatki <- dane_wydatki %>%
-  mutate(Wydatki_na_os = Suma_wydatków/Il_osób)
-
-
-dane %>%
-  ggplot() +
-  geom_histogram(mapping = aes(x = dane_wydatki$Wydatki_na_os),
-                 binwidth = 30,
-                 closed = "left",
-                 fill = "lightgrey",
-                 colour = "black")+
-  labs(title="Wydatki na osobę", 
-       x = "Wysokość wydatków", 
-       y = "Ilość")+
-  theme_minimal(base_size = 12,         
-              base_line_size    = 0.3)
-```
-
-Wykres *„Wydatki na osobę”* ma rozkład χ2. Najwięcej gospodarstw domowych wydaje na osobę pomiędzy 300, a 400 euro. Wraz ze wzorotem wydatków na osobę ilość gospodarstw  domowych zaliczających się do danej grupy jest coraz mniejsza. 
-
-> **Średnia ilość wydatków na osobę w poszczególnych typach rodzin.**
-
-```{r include=FALSE}
-dane_wydatki <- (cbind(dane$TIPFAM,dane_wydatki))
-colnames(dane_wydatki) <- c("Typ_rodziny", "Il_osób", "Suma_wydatków", "Wydatki_na_os")
-
-sr_wydatki_dla_typRodziny <- dane_wydatki %>%
-  group_by(Typ_rodziny)%>%
-  summarise(srednia = mean(Wydatki_na_os))
-```
-
-```{r echo=FALSE}
-sr_wydatki_dla_typRodziny
-```
-
-```{r echo=FALSE}
-sr_wydatki_dla_typRodziny %>%
-  ggplot()+
-  geom_col(mapping = aes(x = reorder(Typ_rodziny,-srednia),
-                         y = srednia))+
-  labs(title="Średnie wydatki na osobe w zależności od typu rodziny", 
-       x = "Typ rodziny", 
-       y = "Średnia wysokość wydatków")
-  
-```
-
-<br/>
-Największe średnie wydatki na osobę występują w gospodarstwie domowym, w którym znajduję się jedna osoba samotna w wieku poniżej 35 lat. Jest to stosunkowo zrozumiałe, ponieważ taka osoba sama pokrywa opłaty związane z mieszkaniem, rachunkami i utrzymaniem. Znacznie mniej wydają osoby starsze, powyżej 65 roku życia, mieszkające samotnie. Ta różnica może wynikać z tego, że osoby do 35 roku życia, zazwyczaj rozwijają swoją karierę zawodową, zarabiają więcej, a także prowadzą bardziej towarzyski tryb życia. Natomiast osoby starsze nauczone są oszczędzenia i przez to ich średnie wydatki są znacznie niższe. 
-
-<br/>
-Średnio najmniej wydają gospodarstwa domowe składające się z pary z dwójką dzieci. Może to być spowodowane tym, że rodzice oszczędzają pieniądze na wykształcenie dzieci, ponieważ trzeba zapłacić za edukację dwóch pociech przez co mniej wydaję się na codzienną konsumpcję,  lub dzieci nie są tak bardzo rozpieszczane, jak w przypadku rodzin z jednym dzieckiem.
-
-> **Średnia ilość wydatków w poszczególnych regionach Włoch.**
-
-```{r include=FALSE}
-
-dane_wydatki <- (cbind(dane$Regione,dane_wydatki))
-colnames(dane_wydatki) <- c("Region","Typ_rodziny", "Il_osób", "Suma_wydatków", "Wydatki_na_os")
-
-(sr_wydatki_dla_Regionu <- dane_wydatki %>%
-  group_by(Region)%>%
-  summarise(srednia = mean(Wydatki_na_os)))
-
-```
-
-```{r echo=FALSE}
-sr_wydatki_dla_Regionu$Region <- c("Piemont i Valle d'Aosta", "Lombardia", "Trentino Alto Adige", "Veneto", "Friuli Venezia Giulia", "Liguria", "Emilia Romagna", "Toskania", "Umbria", "Marki", "Lazio", "Abruzja", "Molise","Kampania","Apulia","Basilicata", "Kalabria", "Sycylia", "Sardynia")
-
-sr_wydatki_dla_Regionu %>%
-  ggplot()+
-  geom_col(mapping = aes(y = reorder(Region,-srednia),
-                         x = srednia))+
-  labs(title="Średnie wydatki na osobe w zależności od regionu", 
-       x = "Średnia wysokość wydatków", 
-       y = "Region")+
-  theme_minimal()
-```
-
-```{r echo=FALSE}
-(wyswietl <- sr_wydatki_dla_Regionu %>%
-arrange(srednia))
-```
-
-<br/>W regionach należących do północnej części Włoch średnie wydatki na osobę są wyższe niż na południu. Najmniej wydaje się na Sycylii, co potwierdza fakt, że w tych rejonach bardzo ciężko założyć własną działalność gospodarczą, lub znaleźć dobrze płatną pracę. Dlatego dużo młodych osób wyjeżdża na północ Włoch w poszukiwaniu lepszych perspektyw. 
-
-<br/>
-
-> **Podsumowanie**
-
-Ze wstępnej analizy wynika, że wśród badanych nie znalazły się gospodarstwa domowe, złożone z jednej osoby samotnej lub pary bez dzieci w wieku 35-64 lat. Oznacza, to, że osoby z tego przedziału wiekowego najczęściej żyją w parach lub jako samotni rodzice. W analizowane grupie największą grupę stanową rodziny z jednym i dwójką dzieci, co świadczy, że Włosi chętnie zakładają rodziny i starają się o dzieci. Widać wyraźne różnice pomiędzy wydatkami gospodarstw domowych pochodzących z północnej i z południowej części Włoch. Zastanawiający jest fakt, że na bieżące wydatki średnio najmniej wydają rodziny z dwójką dzieci. Można przypuszczać, że większą część wydatków poświęcają na edukację dzieci lub zdrowie. 
-
-
-
-# Krzywe Engla. 
-
-> **Dobra normalne**
-
-Wydatki na wedniliny w rodznie z dwojka dzieci.
-
-```{r echo=FALSE}
-#PRZYGOTOWANIE POTRZEBNYCH TABEL
-# WYBRANIE DANYCH DOTYCZACYCH TYLKO GR PARA Z 2 DZIECI
-wydatki_rodzina_2dzieci <- dane_wydatki %>%
-  filter(Typ_rodziny == "8") %>%
-  select(Typ_rodziny, Il_osób, Suma_wydatków, Wydatki_na_os )
-
-wedliny_rodzina_2dzieci <- dane %>%
-  filter(TIPFAM == "8") %>%
-  select(TIPFAM, C_1208)
-
-dane_model <- as.data.frame(cbind(wydatki_rodzina_2dzieci, wedliny_rodzina_2dzieci$C_1208))
-colnames(dane_model) <- c("Typ_rodziny","Il_osób","Suma_wydatków", "Wydatki_na_os", "Wydatki_na_wedliny")
-
-dane_model <- dane_model %>%
-  mutate(Wydatki_na_os_wedliny = Wydatki_na_wedliny/Il_osób)
-  
-
-# PODSUMOWANIE ZBIORU ABY SPRAWDZIC WARTOSCI MAX I MIN
-summary(dane_model)
-
-```
-
-```{r fig.width=20, fig.height=15}
-#WYKRES 1
-
-dane_model <- dane_model %>%
-  filter(Wydatki_na_wedliny > 0)
-
-#PODZIAL WYDATKOW NA GRUPE 25 KWANTYLI
-dane_model <- dane_model %>%
-  mutate(quantile  = ntile(Wydatki_na_wedliny, 25))
-
-#USUNIECIE WARTOSCI MAX PONIEWAZ JEST WYRAzNIE ODDASTAJACA
-dane_model_czyste <- dane_model %>%
-  filter(quantile != 25)
-  
-#POGRUPOWANIE WARTOSCI WEDLUG WYZEJ WYZNACZONYCH GRUP. OBLICZENIE SREDNIEJ Z KAZDEJ GRUPY
-(sr_wydatki_wedliny <- dane_model_czyste %>%
-  group_by(quantile) %>%
- summarise(srednie_w_gr_dochodowej = mean(Wydatki_na_wedliny))) 
-
-summary(sr_wydatki_wedliny)
-
-#WYKRES
-sr_wydatki_wedliny %>%
-  ggplot(aes(x = quantile, y = srednie_w_gr_dochodowej)) +
-           geom_line(size = 1) +
-           geom_point(size = 1.75) +
-  labs(title = "Średnie miesięczne wydatki na wędliny w danej grupie dochodowej wśród par z dwójką dzieci",
-       x = "Numer grupy",
-       y = "Średnie wydatki w euro ")+
-  theme_minimal(base_size = 25)
-  
-```
-
-```{r fig.width=20, fig.height=8}
-#WYKRES 2
-#OBLICZENIE UDZUALU WYDATKOW NA WEDLINY W WYDATKACH OGOLEM
-dane_Engl_2 <- dane_model_czyste%>%
-  mutate(udzial_w_wydatkach  = Wydatki_na_wedliny/Suma_wydatków)
-
-#PODZIAL NA GRUPY - 25 KWANTYLI
-dane_Engl_2 <- dane_Engl_2 %>%
-  select(udzial_w_wydatkach) %>%
-  mutate(quantile = ntile (udzial_w_wydatkach, 25))
-
-#SREDNIA DLA KAZDEJ PODGRUPY
-(sr_udzial_w_wydatkach <- dane_Engl_2%>%
-  group_by(quantile) %>%
-  summarise(sr_udzial = mean(udzial_w_wydatkach)))
-  
-summary(sr_udzial_w_wydatkach)
-
-#WYKRES
-sr_udzial_w_wydatkach %>%
-  ggplot(aes(x = quantile, y = sr_udzial)) +
-           geom_line(size = 1) +
-           geom_point(size = 1.75)+
-  labs(title = "Średni miesięczny udział wydatków na wędliny w rozchodach danej grupy para z dwójką dzieci",
-       x ="Numer grupy",
-       y = "Udział wydatków")+
-  theme_light(base_size = 25)
-
-```
-<br/>
-Wyżej wskazane wykresy wskazują że wydatki na wędliny dla grupy dochodowej para z dwójką dzieci są dobrem luksusowym. W następnym kroku zostanie dopasowana funkcja.
-
-```{r echo=FALSE}
-
-(dane_sortowanie <- dane_model_czyste %>%
-  arrange(Wydatki_na_wedliny))
-```
-
-```{r echo=FALSE}
-#REGRESJA
-#X - dochod na glowe, tu dochud rozpozadzalny na glowe
-#Y - wydatki na wedliny na glowe
-#C - poziom dochodu przy ktorym pojawia sie wydatek - 3815
-  
-
-m <- nls(Wydatki_na_os_wedliny ~ A * Wydatki_na_os * (Wydatki_na_os - C) / (B + Wydatki_na_os), data = dane_model_czyste, start = list(A = 1, B = 8, C = 3815))
-
-
-coef(m)
-summary(m)
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Przygotowanie tabeli do analizy miesięcznych wydatków na mięso
-
-**Wyjaśnienie nazw kolumn zebranych w tabeli:**
+> **Wyjaśnienie nazw kolumn zebranych w tabeli:**
 
 - TIPFAM - typ rodziny
+- Regione - region
 - NC - liczba osób w gospodarstwie domowym
 - Mese - miesiąc, w którym powstał wydatek
-- Eta4_1 - Wiek respondentów zebranych według przedziałów wiekowych: 0-17 (1) 18-34 (2) 35-65 (3) >65 (4)
+- Eta4_1 - Wiek respondentów zebranych według przedziałów wiekowych: 
+</br>0-17 (1) 
+</br>18-34 (2) 
+</br>35-65 (3) >65 (4)
 - C_1201 - Cielęcina i wołowina
 - C_1202 - Mięso wołowe
 - C_1203 - Mięso wieprzowe
@@ -384,8 +54,22 @@ summary(m)
 - C_1208 - Wędliny (kiełbasy, bekon, szynka, würstel)
 - C_1209 - Przetwory i konserwy mięsne (żywność dietetyczna)
 
+```{r include=FALSE}
+#WSZYSTKIE WYDATKI W DANYM GOSPODARSTWIE I WYDATKI NA OSOBE W DANYM GOSPODARSTWIE
+wydatki <- dane %>%
+  select(starts_with("C_")) 
+  
+il_osob_w_gospodarstwie <- dane$NC
+dane_wydatki <- as.data.frame(cbind(il_osob_w_gospodarstwie, rowSums(wydatki,na.rm = TRUE)))
+colnames(dane_wydatki) <- c("Il_osób", "Wszystkie_wydatki")
 
-```{r}
+dane_wydatki <- dane_wydatki %>%
+  mutate(Wszystkie_wydatki_na_os = Wszystkie_wydatki/Il_osób)
+```
+
+
+```{r include = FALSE}
+#STWORZENIE TABELI WYJSCIOWEJ DO ANALIZY
 tabelaDostosowana <- dane %>%
                         select(TIPFAM,
                                 NC,
@@ -399,47 +83,57 @@ tabelaDostosowana <- dane %>%
                                 C_1206, 
                                 C_1207, 
                                 C_1208, 
-                                C_1209)
+                                C_1209,
+                               Regione)
+
+tabelaDostosowana <- as.data.frame(cbind(tabelaDostosowana, "Wszystkie_wydatki" = dane_wydatki$Wszystkie_wydatki, "Wszystkie_wydatki_na_os"=dane_wydatki$Wszystkie_wydatki_na_os))
 ```
 
+</br> **Fragment tabeli z danymi:**
+```{r echo = FALSE}
+head(tabelaDostosowana)
+```
 
-# Przygotowanie danych
-
+> **Przygotowanie danych i oczyszczenie danych** </br>
 
 Na początku sprawdzam typ zmiennych w kolumnach, żeby upewnić się, że sumowanie danych z wiersza będzie poprawną operacją:
 
-```{r}
+```{r echo = FALSE}
 typeof(tabelaDostosowana$C_1201)
 ```
+Dane są danymi  liczbowymi, więc można wykonać operacje. </br>
 
+Dodanie kolumny zawierającej sumę wydatków każdej rodziny na mięso:
 
-Dodaję kolumnę zawierającą sumę wydatków każdej rodziny na mięso:
-
-```{r}
+```{r include = FALSE}
 wydatkiMieso <- tabelaDostosowana %>% 
   mutate(miesoRazem = C_1201 + C_1202 + C_1203 + C_1204 + C_1205 + C_1206 + C_1207 + C_1208 + C_1209)
 ```
 
-
-Sprawdzam występowanie ewentualnych braków w danych:
-
-```{r}
-md.pattern(wydatkiMieso)
+</br>**Fragment tabeli z danymi:**
+```{r echo=FALSE}
+head(wydatkiMieso)
 ```
 
+</br>Sprawdzamy czy w danych nie występują braki:
+```{r echo=FALSE}
+md.pattern(wydatkiMieso, rotate.names = T)
+```
+</br>W danych nie występują braki.
 
-Podstawowe statystyki w kolumnach:
+
+>**Podstawowe statystyki w kolumnach:**
 
 ```{r}
 summary(wydatkiMieso)
 ```
 
-*duże różnice pomiędzy wartością maksymalną, minimalną oraz średnią w poszczególnych kategoriach oraz kolumnie zbiorowej wskazują na występowanie sporych wartości odstających, które należy usunąć przed przystąpieniem do dalszej analizy*
+*Występują duże różnice pomiędzy wartością maksymalną, minimalną oraz średnią w poszczególnych kategoriach, a także kolumnie zbiorowej. Różnice te wskazują na występowanie znacznych wartości odstających, które należy usunąć przed przystąpieniem do dalszej analizy* </br>
 
 
-Struktura danych przedstawiona na wykresie pudełkowym:
+>**Struktura danych przedstawiona na wykresie pudełkowym:**
 
-```{r fig.width=12, fig.height=7}
+```{r echo=FALSE, fig.width=12, fig.height=7}
 
 pudelko1 <- wydatkiMieso %>%
   ggplot() + 
@@ -454,10 +148,10 @@ pudelko1 <- wydatkiMieso %>%
   
 pudelko1
 ```
+</br>
+>**Struktura danych przedstawiona na histogramie:**
 
-Struktura danych przedstawiona na histogramie:
-
-```{r fig.width=12, fig.height=7}
+```{r echo=FALSE, fig.width=12, fig.height=7}
 hist1 <- wydatkiMieso %>%
   ggplot() + 
   geom_histogram(mapping = aes(x = miesoRazem, y = ..density..),
@@ -478,40 +172,245 @@ hist1 <- wydatkiMieso %>%
 hist1
 ```
 
-Zestawiam wykresy pudełkowe kolejnych kolumn zawierających wydatki na poszczególne rodzaje mięs:
+>**Zestawienie wykresów pudełkowych kolejnych kolumn zawierających wydatki na poszczególne rodzaje mięs:**
 
 ```{r fig.width=12, fig.height=8}
-boxplot(wydatkiMieso[5:13], las = 2, col = "paleturquoise2")
+boxplot(wydatkiMieso[5:13], las = 2, col = "paleturquoise2", main = "Wykresy pudełkowe dla poszczególnych rodzajów mięs")
 ```
 
+</br>
 Wykresy wskazują na wysoką skośność prawostronną wartości oraz występowanie wartości odstających, które należy usunąć przed dokładniejszą analizą danych. W dodatku można zauważyć spore różnice w wydatkach na poszczególne rodzaje mięs, a przy tym sporą ilość wysokości wydatków zbliżonych lub równych zeru (perwsza kolumna histogramu). Wartości odstające usunięte zostaną zweryfikowane w kolumnie sumującej wydatki na wszystkie rodzaje mięs, a wiersze z takimi wartościami będą usunięte i nie brane pod uwagę podczas dalszej analizy.
 
-
-# Usuwanie wartości odstających 
+</br>
+>**Usuwanie wartości odstających**
 
 Tworzę tabelę pozbawioną wierszy z wartościami odstającymi na podstawie wartości w kolumnie sumującej wydatki na poszczególne rodzaje mięs:
 
-```{r}
+```{r echo=FALSE}
 sprawdzenie <- quantile(wydatkiMieso$miesoRazem, c(0.9, 0.95, 0.99))
 sprawdzenie
 ```
+</br>
 
+*1% wierszy z największą wartością zsumowanych wydatków zostanie odrzucony:*
 
-*Postanawiam usunąć 1% wierszy z największą wartością zsumowanych wydatków:*
-
-```{r}
+```{r inslude=FALSE}
 wydatkiMiesoNieodstajace <- wydatkiMieso %>%
   filter(miesoRazem < 402.2362)
 
-wydatkiMiesoNieodstajace$Mese <- factor(wydatkiMiesoNieodstajace$Mese,levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"))
+#wydatkiMiesoNieodstajace$Mese <- factor(wydatkiMiesoNieodstajace$Mese,levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"))
+```
+
+**Ostateczna tabela z danymi wykorzystanimy w dalszej analize:**
+```{r echo=FALSE}
+head(wydatkiMiesoNieodstajace)
+#summary(wydatkiMiesoNieodstajace)
 ```
 
 
-# Struktura wydatków na mięso 
+#Inforamcje o próbie. Wstępne statystyki.
+</br>
+> **Typy rodzin według klasyfikacji.**
 
-Po usunięciu wartości odstających można przystąpić do weryfikacji struktury wydatków na mięso względem różnych czynników. 
+W badaniu rodziny zostały podzielone na 11 typów w zależności od tego czy w badanym gospodarstwie domowym znajduje się osoba samotna, para bez dzieci, para z dziećmi, samotny rodzic lub inne.
+<br/>Typy rodzin:
+<br/>1 = Osoba samotna w wieku poniżej 35 lat
+<br/>2 = Osoba samotna w wieku 35-64 lat
+<br/>3 = Osoba samotna w wieku 65 lat i starsza
+<br/>4 = Para bez dzieci z osobą kontaktową poniżej 35 roku życia
+<br/>5 = Para bez dzieci z osobą kontaktową w wieku 35-64 lat
+<br/>6 = Para bez dzieci z osobą kontaktową w wieku 65 lat i starszą
+<br/>7 = Para z 1 dzieckiem
+<br/>8 = Para z 2 dziećmi
+<br/>9 = Para z 3 i więcej dziećmi
+<br/>10 = Samotny rodzic
+<br/>11 = Inne typy
+
+>**Tabela przedstawiająca typ rodziny i ilość tego typu rodzin biorących udział w badaniu:**
+
+```{r include=FALSE} 
+#TABELA Z POSZCZEGOLNYUMI TYPAMI RODZIN I ILOSCIA
+typyRodzin <- wydatkiMiesoNieodstajace %>%
+  count(TIPFAM)
+```
+
+```{r echo=FALSE}
+typyRodzin
+```
+
+```{r echo=FALSE}
+wydatkiMiesoNieodstajace %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = TIPFAM),
+                 closed = "left",
+                 breaks = seq(1,12,1),
+                 fill = "darkgrey",
+                 colour = "black")+
+  labs(title="Histogram częstości występowania typu rodziny włoskiej w badaniu", 
+       x = "Typ rodziny", 
+       y = "Ilość") 
+```
+
+<br/> Z powyższego histogramu i tabeli wynika, że w badaniu nie wzięły udziału rodziny oznaczone według typu:
+  <br/>- 2 - Osoba samotna w wieku 35-64 lat
+  <br/>- 5 - Para bez dzieci z osobą kontaktową w wieku 35-64 lat
+  <br/>- 9 - Para z 3 i więcej dziećmi
+  <br/>- 11 - inne typy
+  <br/>
+  
+> **Ilość członków gospodarstwa domowego w analizowanych rodzinach.**
+
+```{r echo=FALSE}
+wydatkiMiesoNieodstajace %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = NC),
+                 closed = "left",
+                 breaks = seq(1,12,1),
+                 fill = "darkgrey",
+                 colour = "black")+
+  labs(title="Histogram częstości czonków gospodarstwa domowego", 
+       x = "Ilość członków", 
+       y = "Ilość") 
+
+```
+
+Z powyższego histogramu wynika, że w badaniu nie wzięły udziały gospodarstwa domowe, które liczą więcej niż 6 członków. Jest to informacja wymagajca dalszego zweryfikowania, ponieważ we wczeniejsze analize wykazano, że w badaniu nie występuje typ rodziny para z trójką trójk i wicej dziećmi. Tworzymy tabelę kontyngencji dla typów rodzin oraz ilości osób w domostwie.
+
+</br>
+>**Tabela kontyngencji**
 
 ```{r}
+kontTypRodzinyIloscOsob <- table(wydatkiMiesoNieodstajace$TIPFAM, y = wydatkiMiesoNieodstajace$NC)
+kontTypRodzinyIloscOsob
+```
+
+</br>
+W tabeli kontyngencji widać zdawałoby się niezgodność - typem rodziny 8 (para z dwójką dzieci) jest 3639 domostw z czterema mieszkańcami, 849 z pięcioma i 100 z sześcioma. Najprawdopodobniej wkradł się błąd, ponieważ w nocie metodologicznej opisany jest również typ rodziny nr 9, para z trójką i więcej dzieci, który nie występuje w danych. Z drugiej strony może to być również przypadek, gdzie rodzice z dwójką dorosłych już dzieci mieszkają w jednym domu z rodzinami tychże dzieci i przez to ilość osób w domostwie zwiększa się - niestety na podstawie otrzymanych danych nie jest możliwe ustalenie stanu faktycznego gospodarstw domowych w tym aspekcie.
+
+
+> **Ilość zbadanych gospodarstw domowych z poszczególnych regionów.**
+
+```{r echo=FALSE}
+wydatkiMiesoNieodstajace %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = Regione),
+                 closed = "left",
+                 breaks = seq(1,21,1),
+                 fill = "darkgrey",
+                 colour = "black")+
+  labs(title="Ilość gospodarstw domowychw poszczególnych regionach", 
+       x = "Ilość gospodarstw", 
+       y = "Ilość") 
+```
+
+W oznaczeniach regionów Włoskich nie występuje liczba 2 dlatego, że Piemont i Valle d'Aosta zostały połączone. Najwięcej gospodarstw domowych poddano badaniu w Lombardii.
+Porównując ilość badanych gospodarstw z wielkością danych regionów można stwierdzić, że w tych zajmujących większą powierzchnię poddano badaniu większą liczbę mieszkańców.
+
+> **Ilość poddanych badaniu gospodarstw domowych w zależności od miesiąca w którym odbywało się badanie.**
+
+```{r echo=FALSE}
+wydatkiMiesoNieodstajace %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = Mese),
+                 closed = "left",
+                 breaks = seq(1,13,1),
+                 fill = "lightgrey",
+                 colour = "black")+
+  labs(title="Ilość gospodarstw domowych zbadanych w zależności od miesiąca", 
+       x = "Ilość gospodarstw", 
+       y = "Ilość")+
+  theme_classic()
+
+```
+
+W każdym miesiącu poddano badaniu podobną ilość gospodarstw domowych.
+
+> **Wydatki na osobę w gospodarstwach domowych.**
+
+```{r echo=FALSE}
+wydatkiMiesoNieodstajace %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = Wszystkie_wydatki_na_os ),
+                 binwidth = sqrt(nrow(wydatkiMiesoNieodstajace)),
+                 closed = "left",
+                 fill = "darkgrey")+
+  labs(title="Wydatki na osobę", 
+       x = "Wysokość wydatków", 
+       y = "Ilość")+
+  theme_minimal(base_size = 12,         
+              base_line_size    = 0.3)
+
+summary(wydatkiMiesoNieodstajace)
+```
+
+Wykres *„Wydatki na osobę”* ma rozkład χ2. Najwięcej gospodarstw domowych wydaje na osobę pomiędzy 300, a 400 euro. Wraz ze wzorotem wydatków na osobę ilość gospodarstw  domowych zaliczających się do danej grupy jest coraz mniejsza. 
+
+> **Średnia ilość wydatków na osobę w poszczególnych typach rodzin.**
+
+```{r include=FALSE}
+sr_wydatki_dla_typRodziny <- wydatkiMiesoNieodstajace %>%
+  group_by(TIPFAM)%>%
+  summarise(srednia = mean(Wszystkie_wydatki_na_os))
+```
+
+```{r echo=FALSE}
+sr_wydatki_dla_typRodziny
+```
+
+```{r echo=FALSE}
+sr_wydatki_dla_typRodziny %>%
+  ggplot()+
+  geom_col(mapping = aes(x = reorder(TIPFAM,-srednia),
+                         y = srednia))+
+  labs(title="Średnie wydatki na osobe w zależności od typu rodziny", 
+       x = "Typ rodziny", 
+       y = "Średnia wysokość wydatków")
+  
+```
+
+<br/>
+Największe średnie wydatki na osobę występują w gospodarstwie domowym, w którym znajduję się jedna osoba samotna w wieku poniżej 35 lat. Jest to stosunkowo zrozumiałe, ponieważ taka osoba sama pokrywa opłaty związane z mieszkaniem, rachunkami i utrzymaniem. Znacznie mniej wydają osoby starsze, powyżej 65 roku życia, mieszkające samotnie. Ta różnica może wynikać z tego, że osoby do 35 roku życia, zazwyczaj rozwijają swoją karierę zawodową, zarabiają więcej, a także prowadzą bardziej towarzyski tryb życia. Natomiast osoby starsze nauczone są oszczędzenia i przez to ich średnie wydatki są znacznie niższe. 
+
+<br/>
+Średnio najmniej wydają gospodarstwa domowe składające się z pary z dwójką dzieci. Może to być spowodowane nieścisłością w danych, która została opisana wcześniej.
+
+> **Średnia ilość wydatków w poszczególnych regionach Włoch.**
+
+```{r include=FALSE}
+(sr_wydatki_dla_Regionu <- wydatkiMiesoNieodstajace %>%
+  group_by(Regione)%>%
+  summarise(srednia = mean(Wszystkie_wydatki_na_os)))
+```
+
+```{r echo=FALSE}
+sr_wydatki_dla_Regionu$Regione <- c("Piemont i Valle d'Aosta", "Lombardia", "Trentino Alto Adige", "Veneto", "Friuli Venezia Giulia", "Liguria", "Emilia Romagna", "Toskania", "Umbria", "Marki", "Lazio", "Abruzja", "Molise","Kampania","Apulia","Basilicata", "Kalabria", "Sycylia", "Sardynia")
+
+sr_wydatki_dla_Regionu %>%
+  ggplot()+
+  geom_col(mapping = aes(y = reorder(Regione,-srednia),
+                         x = srednia),
+           fill = "darkgrey")+
+  labs(title="Średnie wydatki na osobe w zależności od regionu", 
+       x = "Średnia wysokość wydatków", 
+       y = "Region")+
+  theme_minimal()
+```
+
+```{r echo=FALSE}
+(wyswietl <- sr_wydatki_dla_Regionu %>%
+arrange(srednia))
+```
+
+<br/>W regionach należących do północnej części Włoch średnie wydatki na osobę są wyższe niż na południu. Najmniej wydaje się na Sycylii, co potwierdza fakt, że w tych rejonach bardzo ciężko założyć własną działalność gospodarczą, lub znaleźć dobrze płatną pracę. Dlatego dużo młodych osób wyjeżdża na północ Włoch w poszukiwaniu lepszych perspektyw. 
+
+<br/>
+
+#Statystyki dotyczące struktury wydatków na mięsa:
+</br>
+
+>**Struktura wydatków na mięso w zależności od miesiąca i ilości członków gospodarstwa domowego **
+
+```{r echo=FALSE}
 struktura <- ggplot(wydatkiMiesoNieodstajace, aes(x = as.factor(Mese), y = NC)) + 
   geom_tile(aes(fill = miesoRazem)) +
   scale_fill_continuous(low = "mediumpurple4", high = "white") +
@@ -523,15 +422,17 @@ struktura <- ggplot(wydatkiMiesoNieodstajace, aes(x = as.factor(Mese), y = NC)) 
        y = "Ilość osób w rodzinie")
 struktura
 ```
+</br>
 Patrząc na mapę cieplną można zauważyć, że najwyższe wydatki na mięso występują w marcu przy liczbie osób równej 3 i 5, a te najniższe - zobrazowane przez najciemniejszy kolor - w lutym dla ilości osób mniejszej niż 4, maju, lipcu i listopadzie dla jednej osoby w rodzinie, w październiku dla dwóch osób. Całość wykresu potwierdza intuicję, że wraz ze zwiększaniem się ilości osób w rodzinie, wydatki na mięso również wzrastają. W dalszej części analizy zostanie to zweryfikowane dodatkowo za pomocą regresji.
 
 
-```{r}
+```{r include=FALSE}
 pozbierana <- gather(wydatkiMiesoNieodstajace, "RodzajMiesa", "Wydatek", 5:13)
 ```
 
-Mapa cieplna wydatków na poszczególne rodzaje mięsa zależna od miesiąca:
-```{r}
+>**Mapa cieplna wydatków na poszczególne rodzaje mięsa zależna od miesiąca:**
+
+```{r echo=FALSE}
 struktura1 <- ggplot(pozbierana, aes(x = as.factor(Mese), y = RodzajMiesa)) + 
   geom_tile(aes(fill = Wydatek)) +
   scale_fill_continuous(low = "mediumpurple4", high = "white") +
@@ -543,22 +444,19 @@ struktura1 <- ggplot(pozbierana, aes(x = as.factor(Mese), y = RodzajMiesa)) +
        y = "Rodzaj mięsa")
 struktura1
 ```
+</br>
 Według powyższego wykresu zauważyć można, że struktura wydatków na różne rodzaje mięs zmienia się w poszczególnych miesiącach, choć w przypadku C_1204, C_1205 i C_1209 jest niemal (lub całkowicie) niewidoczna.
 
+>**Wydatki na mięso w zależności od miesiąca**
 
-# Analiza podstawowych statystyk dla mięs
-
-## W którym miesiącu wydatki na mięso są największe:
-
-```{r}
+```{r echo=FALSE}
 najwiekszeWydatki <- wydatkiMiesoNieodstajace %>%
   count(Mese, wt = miesoRazem, sort = TRUE)
 najwiekszeWydatki
 ```
 Największe wydatki na mięso u rodzin Włoskich występują w kwietniu, później w lutym i styczniu.
 
-
-## Który typ rodziny wydaje najwięcej na mięso:
+>**Wydatki na mięso w zależności od typu rodziny:**
 
 ```{r warning=FALSE}
 wydatkiTypRodziny <- wydatkiMiesoNieodstajace %>%
@@ -567,32 +465,179 @@ wydatkiTypRodziny <- wydatkiMiesoNieodstajace %>%
 wydatkiTypRodziny
 ```
 
-Najwięcej wydaje typ rodziny nr 8 (Coppia con 2 figli = Para z 2 dzieci), najmniej typ nr 1 (Persona sola con meno di 35 anni = Osoba samotna w wieku poniżej 35 lat). 
+</br>
+Najwięcej wydaje typ rodziny nr 8 (Coppia con 2 figli = Para z 2 dzieci), najmniej typ nr 1 (Persona sola con meno di 35 anni = Osoba samotna w wieku poniżej 35 lat). Można to również zaobserwować na wykresie poniżej.
 
-Przy czym badane typy rodzin TIPFAM to:
-
-- nr 1: Persona sola con meno di 35 anni = Osoba samotna w wieku poniżej 35 lat
-- nr 3: Persona sola con 65 anni e più = Osoba samotna, która ukończyła 65 lat
-- nr 4: Coppia senza figli con Persona di Riferimento con meno di 35 anni = Bezdzietna para, gdzie respondent to osoba poniżej 35 roku życia
-- nr 6: Coppia senza figli con Persona di Riferimento con 65 anni e più = Bezdzietna para, gdzie respondent to osoba powyżej 65 roku życia
-- nr 7: Coppia con 1 figlio = Para z 1 dzieckiem
-- nr 8: Coppia con 2 figli = Para z 2 dzieci
-- nr 10: Monogenitore = Samotny rodzic
-
-Ich liczebność przedstawia się następująco:
-
-```{r}
-typyRodzin <- wydatkiMiesoNieodstajace %>%
-  count(TIPFAM)
-typyRodzin
+```{r echo=FALSE}
+wydatkiTypRodziny %>%
+   ggplot(aes(y = reorder(TIPFAM, sredniWydatek), 
+                     x = sredniWydatek)) +
+  geom_point(size = 3, col = "black") +
+  labs(title="Średnie wydatki na mięso w zależności od typu rodziny", 
+       x = "Wydatek", 
+       y = "Typ rodziny")+
+  theme(panel.grid.major.y = element_line(colour = "black"))
 ```
-Tabela kontyngencji dla typów rodzin oraz ilości osób w domostwie:
 
-```{r}
-kontTypRodzinyIloscOsob <- table(wydatkiMiesoNieodstajace$TIPFAM, y = wydatkiMiesoNieodstajace$NC)
-kontTypRodzinyIloscOsob
+
+# Krzywe Engla. 
+
+> **Dobra normalne**
+
+Wydatki na wedniliny w rodznie z 1 dzieckiem.
+
+```{r echo=FALSE}
+#PRZYGOTOWANIE POTRZEBNYCH TABEL
+# WYBRANIE DANYCH DOTYCZACYCH TYLKO GR PARA Z DZEIECKIEM
+dane_model <- wydatkiMiesoNieodstajace %>%
+  filter(TIPFAM == "7") %>%
+  select(TIPFAM, NC, Wszystkie_wydatki, Wszystkie_wydatki_na_os, C_1208  )
+
+colnames(dane_model) <- c("Typ_rodziny","Il_osób","Suma_wydatków", "Wydatki_na_os", "Wydatki_na_wedliny")
+
+dane_model_pelne <- dane_model %>%
+  mutate(Wydatki_na_os_wedliny = Wydatki_na_wedliny/Il_osób)
+  
+
+# PODSUMOWANIE ZBIORU ABY SPRAWDZIC WARTOSCI MAX I MIN
+summary(dane_model_pelne)
+
 ```
-W tabeli kontyngencji widać zdawałoby się niezgodność - typem rodziny 8 (para z dwójką dzieci) jest 3639 domostw z czterema mieszkańcami, 849 z pięcioma i 100 z sześcioma. Najprawdopodobniej wkradł się błąd, ponieważ w nocie metodologicznej opisany jest również typ rodziny nr 9, para z trójką i więcej dzieci, który nie występuje w danych. Z drugiej strony może to być również przypadek, gdzie rodzice z dwójką dorosłych już dzieci mieszkają w jednym domu z rodzinami tychże dzieci i przez to ilość osób w domostwie zwiększa się - niestety na podstawie otrzymanych danych nie jest możliwe ustalenie stanu faktycznego gospodarstw domowych w tym aspekcie.
+
+```{r echo=FALSE}
+dane_model_pelne %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = Suma_wydatków ),
+                 binwidth = sqrt(nrow(dane_model)),
+                 closed = "left",
+                 fill = "darkgrey")+
+  labs(title="Wydatki", 
+       x = "Wysokość wydatków", 
+       y = "Ilość")+
+  theme_minimal(base_size = 12,         
+              base_line_size    = 0.3)
+```
+
+```{r echo=FALSE}
+ostatnie_obs <- quantile(dane_model_pelne$Suma_wydatków, c(0.97, 0.98, 0.99))
+ostatnie_obs
+```
+
+```{r include=FALSE}
+dane_model_czyste <- dane_model_pelne %>%
+  filter(Suma_wydatków < 9768.057)
+```
+
+```{r echo=FALSE}
+summary(dane_model_czyste)
+```
+
+```{r fig.width=20, fig.height=15}
+#WYKRES 1
+
+dane_model_czyste <- dane_model_czyste %>%
+  filter(Wydatki_na_wedliny > 0)
+
+#PODZIAL WYDATKOW NA GRUPE 25 KWANTYLI
+dane_model_grupy <- dane_model_czyste %>%
+  mutate(quantile  = ntile(Wydatki_na_wedliny, 25))
+
+summary(dane_model_grupy)
+#USUNIECIE WARTOSCI MAX PONIEWAZ JEST WYRAzNIE ODDASTAJACA
+dane_model_grupy_bez25 <- dane_model_grupy %>%
+  filter(quantile != 25)
+  
+#POGRUPOWANIE WARTOSCI WEDLUG WYZEJ WYZNACZONYCH GRUP. OBLICZENIE SREDNIEJ Z KAZDEJ GRUPY
+(sr_wydatki_wedliny <- dane_model_grupy_bez25 %>%
+  group_by(quantile) %>%
+ summarise(srednie_w_gr_dochodowej = mean(Wydatki_na_wedliny))) 
+
+summary(sr_wydatki_wedliny)
+
+#WYKRES
+sr_wydatki_wedliny %>%
+  ggplot(aes(x = quantile, y = srednie_w_gr_dochodowej)) +
+           geom_line(size = 1) +
+           geom_point(size = 5)+
+  labs(title = "Średnie miesięczne wydatki na wędliny w danej grupie dochodowej wśród par z dzieckiem",
+       x = "Numer grupy",
+       y = "Średnie wydatki w euro ")+
+  theme_minimal(base_size = 25)
+  
+```
+
+```{r fig.width=20, fig.height=8}
+#WYKRES 2
+#OBLICZENIE UDZUALU WYDATKOW NA WEDLINY W WYDATKACH OGOLEM
+dane_Engl <- dane_model_czyste%>%
+  mutate(udzial_w_wydatkach  = Wydatki_na_wedliny/Suma_wydatków)
+
+#PODZIAL NA GRUPY - 25 KWANTYLI
+dane_Engl_grupy <- dane_Engl %>%
+  select(udzial_w_wydatkach) %>%
+  mutate(quantile = ntile (udzial_w_wydatkach, 25))
+
+#SREDNIA DLA KAZDEJ PODGRUPY
+(sr_udzial_w_wydatkach <- dane_Engl_grupy%>%
+  group_by(quantile) %>%
+  summarise(sr_udzial = mean(udzial_w_wydatkach)))
+  
+summary(sr_udzial_w_wydatkach)
+
+#WYKRES
+sr_udzial_w_wydatkach %>%
+  ggplot(aes(x = quantile, y = sr_udzial)) +
+           geom_line(size = 1) +
+           geom_point(size = 5)+
+  labs(title = "Średni miesięczny udział wydatków na wędliny w rozchodach danej grupy para z dzeckiem",
+       x ="Numer grupy",
+       y = "Udział wydatków")+
+  theme_light(base_size = 25)
+
+```
+<br/>
+Wyżej wskazane wykresy wskazują że wydatki na wędliny dla grupy dochodowej para z dwójką dzieci są dobrem luksusowym. W następnym kroku zostanie dopasowana funkcja.
+
+```{r echo=FALSE}
+
+(dane_sortowanie <- dane_model_czyste %>%
+  arrange(Wydatki_na_wedliny))
+```
+
+```{r echo=FALSE}
+#REGRESJA 
+#X - dochod na glowe, tu dochod rozpozadzalny na glowe
+#Y - wydatki na wedliny na glowe
+#C - poziom dochodu przy ktorym pojawia sie wydatek - 3315.39
+
+Srednie_Wydatki <- dane_model_czyste %>%
+  select(Suma_wydatków) %>%
+  mutate(quantile = ntile (Suma_wydatków, 25)) 
+  
+Srednie_Wydatki<- Srednie_Wydatki%>%
+  group_by(quantile) %>%
+  summarise(sr_wydatki = mean(Suma_wydatków))
+
+Srednie_Wydatki_model <- as.data.frame(cbind(Srednie_Wydatki$sr_wydatki,sr_wydatki_wedliny$srednie_w_gr_dochodowej))
+colnames(Srednie_Wydatki) <- c("sr_wydatki","sr_wydatki_wedliny")
+```
+
+```{r echo=FALSE}
+
+m <- nls(Wydatki_na_os_wedliny ~ (A * Wydatki_na_os * (Wydatki_na_os - C) / (B + Wydatki_na_os)), data = dane_model_czyste, start = list(A = 19, B = 200,C = 3315))
+
+coef(m)
+summary(m)
+
+```
+
+
+
+
+
+
+
+
 
 
 # Hipotezy
