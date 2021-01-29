@@ -486,7 +486,7 @@ wydatkiTypRodziny %>%
 
 > **Dobra normalne**
 
-Wydatki na wedniliny w rodznie z 1 dzieckiem.
+Wydatki na wędliny w rodznie z 1 dzieckiem.
 
 ```{r echo=FALSE}
 #PRZYGOTOWANIE POTRZEBNYCH TABEL
@@ -582,7 +582,7 @@ sr_udzial_w_wydatkach %>%
 
 ```
 <br/>
-Wyżej wskazane wykresy wskazują że wydatki na wędliny dla grupy dochodowej para z dzieckiem są dobrem wyższego rzedu. W następnym kroku zostanie dopasowana funkcja.
+Wyżej wskazane wykresy wskazują, że wydatki na wędliny dla grupy dochodowej para z dzieckiem są dobrem wyższego rzędu. W następnym kroku zostanie dopasowana funkcja.
 
 
 ```{r echo=FALSE}
