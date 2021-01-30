@@ -92,20 +92,21 @@ tabelaDostosowana <- as.data.frame(cbind(tabelaDostosowana, "Wszystkie_wydatki" 
 ```
 
 > **Fragment tabeli z danymi:**</br>
+
 ```{r echo = FALSE}
+
 head(tabelaDostosowana)
+
 ```
 
 > **Przygotowanie danych i oczyszczenie danych** </br>
 
-Na początku sprawdzam typ zmiennych w kolumnach, żeby upewnić się, że sumowanie danych z wiersza będzie poprawną operacją:
+Na początku zosta sprawdzony typ zmiennych w kolumnach, żeby upewnić się, że sumowanie danych z wiersza będzie poprawną operacją:
 
 ```{r echo = FALSE}
 typeof(tabelaDostosowana$C_1201)
 ```
 Dane są danymi  liczbowymi, więc można wykonać operacje. </br>
-
-Dodanie kolumny zawierającej sumę wydatków każdej rodziny na mięso:
 
 ```{r include = FALSE}
 wydatkiMieso <- tabelaDostosowana %>% 
@@ -113,12 +114,16 @@ wydatkiMieso <- tabelaDostosowana %>%
 ```
 
 > **Fragment tabeli z danymi:**
+
 ```{r echo=FALSE}
+
 head(wydatkiMieso)
+
 ```
 
 Sprawdzamy czy w danych nie występują braki:
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=7, fig.height=4}
+
 md.pattern(wydatkiMieso, rotate.names = T)
 ```
 W danych nie występują braki.
@@ -135,7 +140,7 @@ summary(wydatkiMieso)
 
 > **Struktura danych przedstawiona na wykresie pudełkowym:**
 
-```{r echo=FALSE, fig.width=12, fig.height=7}
+```{r echo=FALSE, fig.width=12, fig.height=7, warning=FALSE}
 
 pudelko1 <- wydatkiMieso %>%
   ggplot() + 
@@ -153,7 +158,7 @@ pudelko1
  
 > **Struktura danych przedstawiona na histogramie:**
 
-```{r echo=FALSE, fig.width=12, fig.height=7}
+```{r echo=FALSE, fig.width=12, fig.height=7, warning=FALSE}
 hist1 <- wydatkiMieso %>%
   ggplot() + 
   geom_histogram(mapping = aes(x = miesoRazem, y = ..density..),
@@ -284,7 +289,7 @@ Tworzymy zatem tabelę kontyngencji dla typów rodzin oraz ilości osób w domos
  
 > **Tabela kontyngencji**
 
-```{r}
+```{r echo=FALSE}
 kontTypRodzinyIloscOsob <- table(wydatkiMiesoNieodstajace$TIPFAM, y = wydatkiMiesoNieodstajace$NC)
 kontTypRodzinyIloscOsob
 ```
@@ -343,8 +348,6 @@ wydatkiMiesoNieodstajace %>%
        y = "Ilość")+
   theme_minimal(base_size = 12,         
               base_line_size    = 0.3)
-
-summary(wydatkiMiesoNieodstajace)
 ```
 
 Wykres *„Wydatki na osobę”* ma rozkład podobny do rozkładu χ2. Najwięcej gospodarstw domowych wydaje na jedną osobę pomiędzy 300, a 400 euro. Wraz ze wzrostem wydatków na osobę ilość gospodarstw  domowych zaliczających się do danej grupy jest coraz mniejsza. 
@@ -414,7 +417,7 @@ arrange(srednia))
 
 > **Struktura wydatków na mięso w zależności od miesiąca i ilości członków gospodarstwa domowego **
 
-```{r echo=FALSE}
+```{r echo=FALSE, warning=FALSE}
 struktura <- ggplot(wydatkiMiesoNieodstajace, aes(x = as.factor(Mese), y = NC)) + 
   geom_tile(aes(fill = miesoRazem)) +
   scale_fill_continuous(low = "mediumpurple4", high = "white") +
@@ -446,10 +449,13 @@ Największe wydatki na mięso u rodzin Włoskich występują w kwietniu, późni
 
 > **Wydatki na mięso w zależności od typu rodziny:**
 
-```{r warning=FALSE}
+```{r include=FALSE}
 wydatkiTypRodziny <- wydatkiMiesoNieodstajace %>%
   group_by(TIPFAM) %>%
   summarise(sredniWydatek = mean(miesoRazem))
+```
+
+```{r echo=FALSE}
 wydatkiTypRodziny
 ```
 
@@ -467,14 +473,26 @@ wydatkiTypRodziny %>%
   theme(panel.grid.major.y = element_line(colour = "black"))
 ```
 
+# Hipotezy
 
-# Krzywe Engla. 
+## Hipoteza pierwsza
 
-> **Dobra normalne**
+> *Największy udział w wydatkach w ciągu roku na mięso u rodzin włoskich stanowią wydatki na wędliny*
 
-Wydatki na wędliny w rodznie z 1 dzieckiem.
+```{r}
+sumyWydatkow <- colSums(wydatkiMiesoNieodstajace[(5:13)])
+sumyWydatkow
+```
 
-```{r echo=FALSE}
+Zgodnie z wynikami największy udział w wydatkach w ciągu roku na mięso stanowią wydatki na cielęcinę i wołowinę (C_1201). Dopiero następnymi największymi są wydatki na wędliny (C_1208). 
+
+Odrzucam zatem hipotezę pierwszą, wędliny nie stanowią największego udziału w wydatkach na mięso w ciągu roku u rodzin włoskich.
+
+## Hipoteza druga
+
+> *Wędliny dla grupy dochodowej para z dzieckiem są dobrem wyższego rzędu.*
+
+```{r include=FALSE}
 #PRZYGOTOWANIE POTRZEBNYCH TABEL
 # WYBRANIE DANYCH DOTYCZACYCH TYLKO GR PARA Z DZEIECKIEM
 dane_model <- wydatkiMiesoNieodstajace %>%
@@ -492,6 +510,8 @@ summary(dane_model_pelne)
 
 ```
 
+Aby zaklasyfikować dobra do właściwego typu, należy podzielić gospodarstwa domowe na grupy dochodowe. Przed podziałem zostanie zweryfikowany rozkład wydatków całkowitych.
+
 ```{r echo=FALSE}
 dane_model_pelne %>%
   ggplot() +
@@ -499,25 +519,26 @@ dane_model_pelne %>%
                  binwidth = sqrt(nrow(dane_model)),
                  closed = "left",
                  fill = "darkgrey")+
-  labs(title="Wydatki", 
+  labs(title="Wszystkie wydatki", 
        x = "Wysokość wydatków", 
        y = "Ilość")+
   theme_minimal(base_size = 12,         
               base_line_size = 0.3)
 ```
 
-```{r echo = FALSE}
+Na wykresie powyżej można zauważyć, że w wydatkach ogółem występuje dużo wartości odstających, dlatego 1 % największy wartości zostanie usunięty. 
+
+```{r include = FALSE}
 obs_odstajace <- quantile(dane_model_pelne$Suma_wydatków, c(0.9, 0.95, 0.99))
 obs_odstajace
 ```
 
-```{r echo = FALSE}
+```{r include = FALSE}
 dane_model_czyste <- dane_model_pelne %>%
   filter(Suma_wydatków < 9768.057  )
 ```
 
-
-```{r fig.width=20, fig.height=15}
+```{r include = FALSE}
 #WYKRES 1
 
 dane_model_czyste <- dane_model_czyste %>%
@@ -528,9 +549,6 @@ dane_model_grupy <- dane_model_czyste %>%
   mutate(quantile  = ntile(Suma_wydatków, 25))
 
 summary(dane_model_grupy)
-#USUNIECIE WARTOSCI MAX PONIEWAZ JEST WYRAzNIE ODDASTAJACA
-#dane_model_grupy_bez25 <- dane_model_grupy %>%
-  #filter(quantile != 25)
   
 #POGRUPOWANIE WARTOSCI WEDLUG WYZEJ WYZNACZONYCH GRUP. OBLICZENIE SREDNIEJ Z KAZDEJ GRUPY
 (sr_wydatki_wedliny <- dane_model_grupy %>%
@@ -538,20 +556,24 @@ summary(dane_model_grupy)
  summarise(srednie_w_gr_dochodowej = mean(Wydatki_na_wedliny))) 
 
 summary(sr_wydatki_wedliny)
+```
+
+```{r echo=FALSE}
 
 #WYKRES
 sr_wydatki_wedliny %>%
   ggplot(aes(x = quantile, y = srednie_w_gr_dochodowej)) +
            geom_line(size = 1) +
            geom_point(size = 5)+
-  labs(title = "Średnie miesięczne wydatki na wędliny w danej grupie dochodowej wśród par z dzieckiem",
+  labs(title = "Średnie miesięczne wydatki na wędliny w danej grupie\ndochodowej wśród par z dzieckiem",
        x = "Numer grupy",
        y = "Średnie wydatki w euro ")+
   theme_minimal(base_size = 25)
   
 ```
 
-```{r fig.width=20, fig.height=8}
+```{r include=FALSE, fig.width=20, fig.height=8}
+
 #WYKRES 2
 #OBLICZENIE UDZUALU WYDATKOW NA WEDLINY W WYDATKACH OGOLEM
 dane_Engl <- dane_model_grupy%>%
@@ -567,13 +589,15 @@ dane_Engl_grupy <- dane_Engl %>%
   summarise(sr_udzial = mean(udzial_w_wydatkach)))
   
 summary(sr_udzial_w_wydatkach)
+```
 
+```{r echo=FALSE}
 #WYKRES
 sr_udzial_w_wydatkach %>%
   ggplot(aes(x = quantile_u, y = sr_udzial)) +
            geom_line(size = 1) +
            geom_point(size = 5)+
-  labs(title = "Średni miesięczny udział wydatków na wędliny w rozchodach danej grupy para z dzeckiem",
+  labs(title = "Średni miesięczny udział wydatków na wędliny\nw rozchodach danej grupy para z dzeckiem",
        x ="Numer grupy",
        y = "Udział wydatków")+
   theme_light(base_size = 25)
@@ -582,8 +606,7 @@ sr_udzial_w_wydatkach %>%
  
 Wyżej wskazane wykresy wskazują, że wydatki na wędliny dla grupy dochodowej para z dzieckiem są dobrem wyższego rzędu. W następnym kroku zostanie dopasowana funkcja.
 
-
-```{r echo=FALSE}
+```{r include=FALSE}
 
 dane_model_koncowy <- dane_model_czyste %>%
   mutate(quantile  = ntile(Suma_wydatków, 25))%>%
@@ -593,7 +616,7 @@ dane_model_koncowy <- dane_model_czyste %>%
 
 ```
 
-```{r echo=FALSE, fig.width=8, fig.height=8 }
+```{r}
 #REGRESJA 
 #X - sredni calkowity dochod w gospodarstwie w kwantylach
 #Y - sredni wydatk na wedliny w kwantylach
@@ -603,8 +626,11 @@ m <- nls(sredni_wydatkek_w_gr_dochodowej ~ (a * (srednie_dochod_w_gr - c))/(sred
 
 coef(m)
 summary(m)
+```
+Wszystkie oszacowania parametrów są dodatnie i statystycznie istotne.
 
-
+Wykres dopiasowania funkcji Tornquista II rodzaju dla wędlin.
+```{r echo = FALSE,  fig.width=8, fig.height=8}
 a1 <- as.numeric(coef(m)[1])
 b1 <- as.numeric(coef(m)[2])
 c1 <- as.numeric(coef(m)[3])
@@ -615,29 +641,73 @@ eq = function(x){(a1*(x - c1))/(x + b1)}
 
 ggplot() + stat_function(fun = eq, data.frame(x=c(1,2000)), mapping=aes(x=x), col= "red") +
   geom_point(mapping=aes(dane_model_koncowy$srednie_dochod_w_gr,dane_model_koncowy$sredni_wydatkek_w_gr_dochodowej))+
-  labs(x = "Średnie miesięczne rozchody ogółem w danej grupie dochodowej para z 1 dzieckiem", 
-       y = "Średni  miesięczny wydatek na wędliny w danej grupie dochodowej para z 1 dzieckiem")+
+  labs(x = "Średnie miesięczne rozchody ogółem w danej grupie\ndochodowej para z 1 dzieckiem", 
+       y = "Średni  miesięczny wydatek na wędliny w danej grupie/n
+       dochodowej para z 1 dzieckiem")+
   theme_minimal()
 
 ```
 
-# Hipotezy
+## Hipoteza trzecia
 
-## Pierwsza
+> *Wydatki na cielęcinę i wołowinę są bardziej zróżnicowanie wielkościowo pomiędzy rodzinami niż wydatki na wędliny*
 
-> *Największy udział w wydatkach w ciągu roku na mięso u rodzin włoskich stanowią wydatki na wędliny*
-
-```{r}
-sumyWydatkow <- colSums(wydatkiMiesoNieodstajace[(5:13)])
-sumyWydatkow
+```{r include=FALSE}
+zebrane1 <- wydatkiMiesoNieodstajace %>% select(C_1201, C_1208)
+doLevene <- gather(zebrane1, key = "rodzajMiesa", value = "wydatek")
+doLevene
 ```
 
-Zgodnie z wynikami największy udział w wydatkach w ciągu roku na mięso stanowią wydatki na cielęcinę i wołowinę (C_1201). Dopiero następnymi największymi są wydatki na wędliny (C_1208). 
+```{r}
+leveneTest(wydatek ~ rodzajMiesa, data = doLevene)
+```
 
-Odrzucam zatem hipotezę pierwszą, wędliny nie stanowią największego udziału w wydatkach na mięso w ciągu roku u rodzin włoskich.
+p-value < 0.05, zatem odrzucam hipotezę zerową testu Levene mówiącą o braku istotnych różnic w wariancji pomiędzy grupami na rzecz hipotezy alternatywnej - pomiędzy grupami występują istotne różnice w wariancji.
+
+```{r}
+var(wydatkiMiesoNieodstajace$C_1201)
+var(wydatkiMiesoNieodstajace$C_1208)
+```
+
+Zgodnie z przewidywaniami, większa wariancja występuje w przypadku wydatków na cielęcinę i wołowinę niż wędliny. Przyjmuję zatem hipotezę trzecią. Wynik można zweryfikować też na wykresie poniżej.
+
+```{r include=FALSE}
+wydatki_wolowina <- wydatkiMiesoNieodstajace %>%
+  select(C_1201, TIPFAM, NC)
+
+wydatki_wedliny <- wydatkiMiesoNieodstajace %>%
+  select(C_1208, TIPFAM, NC)
+
+v_wolowina <- as.data.frame(rep("C_1201", nrow(wydatki_wolowina)))
+v_wedliny <- as.data.frame(rep("C_1208", nrow(wydatki_wedliny)))
+
+d1 <- as.data.frame(cbind( v_wolowina,wydatki_wolowina))
+d2 <- as.data.frame(cbind(v_wedliny,wydatki_wedliny))
+colnames(d1) <- c("rodzaj", "wydatek", "TIPFAM", "NC")
+colnames(d2) <- c("rodzaj", "wydatek", "TIPFAM", "NC")
+
+d1 <- d1 %>%
+  mutate(na_os = wydatek/NC)
+d2 <- d2 %>%
+  mutate(na_os = wydatek/NC)
 
 
-## Druga
+do_wykresu <- as.data.frame(rbind(d1,d2))
+```
+
+```{r echo=FALSE}
+do_wykresu %>%
+ ggplot() +
+    geom_boxplot(mapping = aes(x = as.factor(TIPFAM), 
+                               y = na_os, 
+                               col = as.factor(rodzaj))) +
+       labs(title = "Wydatki na osobę na cielęcinę i wołowinę, a wydatki na wędliny\nw zależności od typy rodziny",
+            x = "Typ rodziny" ,
+            y = "Wydatki na os" ,
+            color = "Rodzaj mięsa")
+```
+
+## Hioteza czwarta
 
 > *Wysokość wydatków na mięso ogółem zależy od miesiąca*
 
@@ -690,30 +760,7 @@ struktura1
 Według powyższego wykresu zauważyć można, że struktura wydatków na różne rodzaje mięs zmienia się w poszczególnych miesiącach bardzo nieznacznie, a w przypadku C_1204, C_1205 i C_1209 jest niemal (lub całkowicie) niewidoczna.
 
 
-## Trzecia
-
-> *Wydatki na cielęcinę i wołowinę są bardziej zróżnicowanie wielkościowo pomiędzy rodzinami niż wydatki na wędliny*
-
-```{r include=FALSE}
-zebrane1 <- wydatkiMiesoNieodstajace %>% select(C_1201, C_1208)
-doLevene <- gather(zebrane1, key = "rodzajMiesa", value = "wydatek")
-doLevene
-```
-
-```{r}
-leveneTest(wydatek ~ rodzajMiesa, data = doLevene)
-```
-
-p-value < 0.05, zatem odrzucam hipotezę zerową testu Levene mówiącą o braku istotnych różnic w wariancji pomiędzy grupami na rzecz hipotezy alternatywnej - pomiędzy grupami występują istotne różnice w wariancji.
-
-```{r}
-var(wydatkiMiesoNieodstajace$C_1201)
-var(wydatkiMiesoNieodstajace$C_1208)
-```
-
-Zgodnie z przewidywaniami, większa wariancja występuje w przypadku wydatków na cielęcinę i wołowinę niż wędliny. Przyjmuję zatem hipotezę trzecią. 
-
-## Czwarta
+# Hipoteza piąta
 
 > *Wysokość całkowitych wydatków na mięso zależy od typu rodziny*
 
@@ -842,6 +889,8 @@ Najbardziej interesujące wnioski z całości przeprowadzonych analiz są nastę
 Średnio najmniej wydają gospodarstwa domowe składające się z pary z dwójką dzieci.
 - W północnej części Włoch średnie wydatki na osobę są wyższe niż na południu. - Jeśli chodzi o spożycie mięsa, struktura wydatków na konkretne jego rodzaje nieznacznie zmienia się w kolejnych miesiącach. Największe wydatki obserwuje się w kwietniu oraz u typu rodziny para z dwójką dzieci (ten sam typ, który średnio wydaje najmniej).
 - Największy udział w wydatkach na mięso stanowią wydatki na cielęcinę i wołowinę.
+- Na drugim miekscu co do wielkości udziału w wydatkach na mięso znajdują się wydatki na wędliny. Dla pary z jednym dzieckiem jest to dobro wyższego rzędu, co oznacza, że wydatki na wędliny rosną w miarę wzrostu dochodu.
+- Ponadto pomiędzy dwoma najczęściej kupowanymi rodzajami mięs czyli pomiędzy cielęciną i wołowiną , a wędlinami występuje znaczne zróżnicowanie w wysokości wydatków na osobę we wszystkich badanych typach rodzin. Czyli w każdym występującym w badaniu typie rodziny wysokość wydatków na cielęcinę i wołowinę jest bardziej zróżnicowana niż wysokość wydatków na wędliny.
 - Dodatkowo warto zaznaczyć, że to, czy rodzina włoska przekroczy średnią wysokość wydatków na mięso zależna jest od typu rodziny, wieku osoby kontaktowej (głowy rodziny), a także w małym stopniu od tego, czy wydatek występuje w kwartale czwartym.
 
 
