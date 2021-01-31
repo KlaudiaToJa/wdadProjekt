@@ -898,3 +898,22 @@ Najbardziej interesujące wnioski z całości przeprowadzonych analiz są nastę
 - Na drugim miejscu co do wielkości udziału w wydatkach na mięso znajdują się wydatki na wędliny. Dla pary z jednym dzieckiem jest to dobro wyższego rzędu, co oznacza, że wydatki na wędliny rosną w miarę wzrostu dochodu.
 - Ponadto pomiędzy dwoma najczęściej kupowanymi rodzajami mięs czyli pomiędzy cielęciną i wołowiną , a wędlinami występuje znaczne zróżnicowanie w wysokości wydatków na osobę we wszystkich badanych typach rodzin. Czyli w każdym występującym w badaniu typie rodziny wysokość wydatków na cielęcinę i wołowinę jest bardziej zróżnicowana niż wysokość wydatków na wędliny.
 - Dodatkowo warto zaznaczyć, że to, czy rodzina włoska przekroczy średnią wysokość wydatków na mięso zależna jest od typu rodziny, wieku osoby kontaktowej (głowy rodziny), a także w małym stopniu od tego, czy wydatek występuje w kwartale czwartym.
+
+
+# Podział pracy
+
+Podział pracy spisany został według utworzonych rozdziałów i podrozdziałów wraz z wyszczególnieniem elementów i osoby za nie odpowiedzialnej.
+
+1. Przygotowanie tabeli z danymi potrzebnymi do przeprowadzenia analizy - Klaudia Pajor, Anna Pietryka
+2. Informacje o próbie. Wstępne statystyki - Anna Pietryka, Klaudia Pajor
+3. Statystyki dotyczące struktury wydatków na mięsa - Klaudia Pajor, Anna Pietryka
+4. Hipoteza pierwsza - Klaudia Pajor
+5. Hipoteza druga (w tym wykresy, krzywe Engla i Tornquista) - Anna Pietryka
+6. Hipoteza trzecia - Klaudia Pajor, Anna Pietryka
+7. Hipoteza czwarta, piąta - Klaudia Pajor
+8. Regresja logistyczna - Klaudia Pajor
+
+
+
+
+
